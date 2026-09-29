@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1"
+    />
+    <meta name="theme-color" content="#F2EFE7" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Formulary" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Formulary</title>
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Courier+Prime:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <script type="module" crossorigin src="/assets/index-DY6aDBy2.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Covz3XYt.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // A phone or a simulator has no inspector: a boot failure is painted on the screen instead.
+      (function () {
+        function show(head, body) {
+          // only a boot that never painted: once the app is up, a stray rejection must not cover it
+          var root = document.getElementById('root');
+          if (root && root.childElementCount > 0) return;
+          var pre = document.createElement('pre');
+          pre.style.cssText =
+            'position:fixed;inset:0;margin:0;padding:24px;background:#14120f;color:#f2efe7;font:12px/1.5 monospace;white-space:pre-wrap;overflow:auto;z-index:99';
+          pre.textContent = head + '\n\n' + body;
+          document.body.appendChild(pre);
+        }
+        window.addEventListener('error', function (e) {
+          show('boot failed', (e.message || e) + '\n' + (e.filename || '') + ':' + (e.lineno || '') + '\n\n' + (e.error && e.error.stack ? e.error.stack : ''));
+        });
+        window.addEventListener('unhandledrejection', function (e) {
+          var r = e.reason;
+          show('unhandled rejection', r && (r.stack || r.message) ? r.stack || r.message : String(r));
+        });
+        window.__moduleFailed = function () {
+          show('module failed to load', 'the browser could not fetch or parse /src/main.tsx or one of its imports (see the network log)');
+        };
+      })();
+    </script>
+  </body>
+</html>

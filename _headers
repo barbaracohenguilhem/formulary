@@ -1,0 +1,16 @@
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-zba8fcJAhg7hJ37ciD1s8MLmZEiSzf50ZAflNh7n3P8='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://mboycjejyokkkaddcwng.supabase.co wss://mboycjejyokkkaddcwng.supabase.co; img-src 'self' data:; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(self), geolocation=(), payment=()
+  Strict-Transport-Security: max-age=63072000
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/
+  Cache-Control: no-cache
+
+/index.html
+  Cache-Control: no-cache
