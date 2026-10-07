@@ -24,6 +24,11 @@
   var ROLE_KEY = 'formulary.role';
   var REVIEW_KEY = 'formulary.review'; // lotId -> { status: 'awaiting_final', feedback: [...] }
   var ROLES = ['owner', 'carla'];
+  var SHARED_REVIEW_PATH = 'formulary/review-queue';
+  var SUPABASE_URL = 'https://mboycjejyokkkaddcwng.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_cR79ASnMFlN25oz3v4TFIg_Jd0XTcsI';
+  var reviewCache = null;
+  var sharedSave = Promise.resolve();
 
   /* ---------------- role resolution ---------------- */
 
@@ -74,19 +79,81 @@
   /* ---------------- review state (awaiting_final gate) ---------------- */
 
   function loadReview() {
+    if (reviewCache) return reviewCache;
     try {
-      return JSON.parse(localStorage.getItem(REVIEW_KEY) || '{}');
+      reviewCache = JSON.parse(localStorage.getItem(REVIEW_KEY) || '{}');
     } catch (e) {
-      return {};
+      reviewCache = {};
     }
+    return reviewCache;
   }
 
   function saveReview(state) {
+    reviewCache = state;
     try {
       localStorage.setItem(REVIEW_KEY, JSON.stringify(state));
     } catch (e) {
       /* best effort; queue simply won't persist across reloads */
     }
+    sharedSave = sharedSave.then(function () {
+      var session;
+      try {
+        session = JSON.parse(localStorage.getItem('formulary.auth') || 'null');
+      } catch (e) {
+        return;
+      }
+      if (!session || !session.access_token) return;
+      return fetch(SUPABASE_URL + '/rest/v1/docs?on_conflict=path', {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: 'Bearer ' + session.access_token,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates,return=minimal',
+        },
+        body: JSON.stringify({
+          path: SHARED_REVIEW_PATH,
+          doc: state,
+          updated_at: new Date().toISOString(),
+        }),
+      }).catch(function () {});
+    });
+  }
+
+  function refreshSharedReview() {
+    var session;
+    try {
+      session = JSON.parse(localStorage.getItem('formulary.auth') || 'null');
+    } catch (e) {
+      return Promise.resolve();
+    }
+    if (!session || !session.access_token) return Promise.resolve();
+    return sharedSave.then(function () {
+      var url = new URL(SUPABASE_URL + '/rest/v1/docs');
+      url.searchParams.set('path', 'eq.' + SHARED_REVIEW_PATH);
+      url.searchParams.set('select', 'doc');
+      return fetch(url.toString(), {
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: 'Bearer ' + session.access_token,
+        },
+      })
+        .then(function (response) {
+          if (!response.ok) return null;
+          return response.json();
+        })
+        .then(function (rows) {
+          if (!rows || !rows.length || !rows[0].doc || typeof rows[0].doc !== 'object') return;
+          reviewCache = rows[0].doc;
+          try {
+            localStorage.setItem(REVIEW_KEY, JSON.stringify(reviewCache));
+          } catch (e) {
+            /* best effort */
+          }
+          renderOwnerQueue();
+        })
+        .catch(function () {});
+    });
   }
 
   function currentLotId() {
@@ -319,6 +386,13 @@
     if (role === 'owner') {
       enhanceOwner();
       bindOwnerActions();
+      refreshSharedReview();
+      window.setInterval(function () {
+        if (!document.hidden) refreshSharedReview();
+      }, 5000);
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) refreshSharedReview();
+      });
     } else if (role === 'carla') {
       enhanceCarla();
     }
