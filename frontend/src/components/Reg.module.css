@@ -1,0 +1,6 @@
+/* The registered mark rides small and high on the wordmark. */
+.reg {
+  font-size: 7px;
+  vertical-align: super;
+  letter-spacing: 0;
+}

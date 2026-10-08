@@ -1,0 +1,32 @@
+/* Formulary design tokens — handoff §9.
+   Radius is 0 on everything and there are no shadows; both are enforced in base.css. */
+
+:root {
+  /* ——— colour ——— */
+  --ink: #14120f;
+  --paper: #f2efe7; /* screen */
+  --label: #f8f6f0; /* inner label stock */
+  --muted: #6b6559; /* 5.0:1 on paper — do not lighten */
+  --ecru: #f2efe7; /* on ink */
+  --ecru-2: #a8a296; /* secondary on ink */
+  --desk: #d9d3c4; /* outside the device */
+
+  --hairline: rgba(20, 18, 15, 0.16);
+  --hairline-label: rgba(20, 18, 15, 0.14); /* inside the label */
+  --rule-strong: 2px solid var(--ink);
+  --rule: 1px solid var(--ink);
+
+  /* ——— type ——— */
+  --sans: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'Courier Prime', 'Courier New', Courier, monospace;
+
+  /* ——— metrics ——— */
+  --gutter: 24px;
+  --gutter-label: 22px;
+  --frame: 402px; /* mobile-first column */
+
+  /* ——— motion ——— */
+  --ease-rise: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-ink: cubic-bezier(0.2, 0.8, 0.3, 1.2);
+  --dur: 300ms;
+}

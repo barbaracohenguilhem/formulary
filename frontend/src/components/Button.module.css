@@ -1,0 +1,107 @@
+/* Button hierarchy — §4.2. Solid is the action, outline is management, quiet is exit. */
+
+.base {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  transition:
+    background-color 120ms linear,
+    opacity 120ms linear;
+}
+
+.base:active {
+  transform: scale(0.99);
+}
+
+/* 1 — the action. The primary button IS the task. */
+.solid {
+  height: 58px;
+  background: var(--ink);
+  color: var(--ecru);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-indent: 0.2em;
+}
+
+.solid:hover {
+  background: #000;
+}
+
+/* 2 / 3 — mark as done, hand back. */
+.outline {
+  height: 54px;
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+}
+
+.outline:hover {
+  opacity: 0.7;
+}
+
+/* 4 — discard. */
+.quiet {
+  height: 50px;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+}
+
+.quiet:hover {
+  opacity: 0.7;
+}
+
+.disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* The stack below a label. */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 26px;
+}
+
+/* "dialled at 17:04" — the receipt under the action button. */
+.receipt {
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  text-indent: 0.24em;
+  color: var(--muted);
+}
+
+.action {
+  margin-top: 26px;
+}
+
+.afterAction {
+  margin-top: 8px;
+}
+
+/* "print label" — solid, but at the outline height and tracking (§4.4). */
+.print {
+  height: 54px;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+}
+
+/* "hand to the studio →" sits a little closer to its label. */
+.handOff {
+  margin-top: 22px;
+}
