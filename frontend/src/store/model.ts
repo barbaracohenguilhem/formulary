@@ -30,6 +30,8 @@ export type Robot = {
   on: string | null;
   /** A tally run is under way — the tally can stop it. */
   run: boolean;
+  /** Cloud build: the scheduled routine picks up queued requests on its next run. */
+  routine?: boolean;
 };
 
 export const idleRobot = (): Robot => ({

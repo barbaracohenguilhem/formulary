@@ -66,6 +66,7 @@ function specsOf(task: Task, revising: boolean): SpecRow[] {
 /** What the proposal inset says, and the control it carries, for a lot with no draft yet. */
 function draftState(task: Task, robot: Robot, busyHere: boolean) {
   const p = task.prepared!;
+  if (p.robot?.state === 'queued') return { text: 'queued · the robot prepares it within the hour' };
   if (p.robot?.state === 'preparing' || (busyHere && robot.phase === 'drafting')) {
     return { text: 'the robot is reading the whole thread…', act: busyHere ? { text: 'stop' } : undefined };
   }
@@ -120,7 +121,8 @@ export function LabelScreen({
   const [returnError, setReturnError] = useState('');
   const busyHere = !!robot && robot.on === task.id;
   const revising = busyHere && robot!.phase === 'revising';
-  const locked = saving || returning || canWrite === false;
+  const queued = p?.robot?.state === 'queued';
+  const locked = saving || returning || canWrite === false || queued;
   const busyElse = !!robot && robot.phase !== 'idle' && !busyHere;
 
   const slipFoot =
@@ -128,7 +130,7 @@ export function LabelScreen({
       ? revising
         ? 'the robot is revising…'
         : robot?.able
-          ? 'queued · the robot answers on your next ↻'
+          ? robot.routine ? 'queued · the robot answers within the hour' : 'queued · the robot answers on your next ↻'
           : 'waiting · the robot runs on the mailbox owner’s view'
       : undefined;
 
@@ -137,8 +139,8 @@ export function LabelScreen({
     if (p.proposal && !(busyHere && robot!.phase === 'drafting')) {
       proposal = (
         <Proposal
-          label={barbara ? p.review === 'approved' ? 'proposal approved by carla' : 'current proposal' : p.revised ? 'revised proposal · for your approval' : undefined}
-          act={!barbara && robot?.able && !revising && p.review === 'pending' ? { text: 'draft it again', onClick: () => onPrepare?.(), disabled: busyElse || locked } : undefined}
+          label={queued ? 'queued · the robot drafts it again within the hour' : barbara ? p.review === 'approved' ? 'proposal approved by carla' : 'current proposal' : p.revised ? 'revised proposal · for your approval' : undefined}
+          act={!barbara && robot?.able && !revising && !queued && p.review === 'pending' ? { text: 'draft it again', onClick: () => onPrepare?.(), disabled: busyElse || locked } : undefined}
         >
           {p.proposal}
         </Proposal>

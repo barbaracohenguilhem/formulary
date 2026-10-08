@@ -314,10 +314,28 @@ try {
   assert.equal(docs.get('lots/pending').review, 'pending');
   console.log('PASS: stale decision is rejected before writing');
 
+  // Production uses a scheduled routine without server Gmail/Claude credentials.
+  // Asking for another proposal must enqueue shared work, not invoke a server draft.
+  lot('routine', 900, 'scheduled routine proposal');
+  await carla.reload();
+  await carla.getByRole('button', { name: /scheduled routine proposal/ }).click();
+  await carla.getByRole('button', { name: 'draft it again', exact: true }).click();
+  await stored('routine', (doc) => doc.robot?.state === 'queued');
+  await present(carla.getByText('queued · the robot drafts it again within the hour', { exact: true }));
+  assert.equal(await carla.getByRole('button', { name: 'approve for barbara', exact: true }).isDisabled(), true);
+  await carla.reload();
+  await carla.getByRole('button', { name: /scheduled routine proposal/ }).click();
+  await present(carla.getByText('queued · the robot drafts it again within the hour', { exact: true }));
+  assert.equal(await carla.getByRole('button', { name: 'draft it again', exact: true }).count(), 0);
+  await carla.getByRole('button', { name: '← index', exact: true }).click();
+  await carla.getByRole('button', { name: 'read new mail', exact: true }).click();
+  await present(carla.getByText(/the robot reads the inbox every hour/i));
+  console.log('PASS: scheduled routine queues drafts, persists queued state, and does not call an inactive server robot');
+
   assert.deepEqual(unexpected, [], 'all API usage must remain in the offline fixture contract');
   assert.deepEqual(pageErrors, [], 'no unhandled browser errors');
   assert.equal(apiCalls.some((call) => call.who === 'barbara' && call.path.startsWith('/functions/v1/')), false, 'Barbara must not run or depend on the robot');
-  assert.equal(commits.filter((commit) => commit.who === 'carla').length, 5);
+  assert.equal(commits.filter((commit) => commit.who === 'carla').length, 6);
   assert.equal(commits.filter((commit) => commit.who === 'barbara').length, 2);
   console.log(`PASS: ${commits.length} expected writes, no real backend/Gmail traffic, no browser errors`);
 } finally {

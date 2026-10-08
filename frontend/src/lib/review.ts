@@ -22,6 +22,9 @@ export function reviewPatch(doc: LotDoc, actor: ReviewActor, action: ReviewActio
   const expected = action.kind === 'complete' || action.kind === 'return' ? 'barbara' : 'carla';
   if (actor !== expected) reject('review_forbidden', `this action belongs to ${expected}`);
   if (action.kind !== 'reopen' && doc.completed) reject('review_conflict', 'this lot was already handled · refresh to check');
+  if (doc.robot?.state === 'queued') {
+    reject('review_conflict', 'this proposal is queued for the robot · review it when it is ready');
+  }
   if (doc.robot?.state === 'preparing' || doc.robot?.state === 'revising') {
     reject('review_conflict', 'the proposal is changing · wait for it to finish');
   }

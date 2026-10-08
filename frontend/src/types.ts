@@ -57,7 +57,7 @@ export type ReviewState = 'pending' | 'approved' | 'changes' | 'barbara';
 
 /** What the robot is doing to a lot right now, when anything. */
 export type RobotState = {
-  state: 'preparing' | 'revising' | 'failed';
+  state: 'queued' | 'preparing' | 'revising' | 'failed';
   at: string;
   note?: string;
 };

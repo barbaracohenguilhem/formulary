@@ -62,7 +62,7 @@ export type DraftDoc = {
 };
 
 export type RobotMark = {
-  state: 'preparing' | 'revising' | 'failed';
+  state: 'queued' | 'preparing' | 'revising' | 'failed';
   at: string;
   note?: string;
 };
@@ -216,7 +216,7 @@ export function readLot(data: Record<string, unknown> | undefined): LotDoc | nul
     draftFail: readFail(data.draftFail),
     risk: str(data.risk, 300) || null,
     robot:
-      r && (r.state === 'preparing' || r.state === 'revising' || r.state === 'failed')
+      r && (r.state === 'queued' || r.state === 'preparing' || r.state === 'revising' || r.state === 'failed')
         ? { state: r.state, at: str(r.at, 40), note: str(r.note, 300) || undefined }
         : null,
     review,

@@ -45,6 +45,9 @@ only reloads handoffs; it does not trigger the email robot.
   or an atomic compare-and-swap upgrade to `doc_merge`.
 - Existing devices must already be paired with the correct person. An old local
   role-picker choice does not override their authenticated identity.
+- The deployed scheduled robot is preserved: when the server reports no Gmail
+  connection, new draft requests queue for the routine rather than calling the
+  inactive server robot. Queued proposals cannot be approved until prepared.
 
 ## Editable source and static output
 
@@ -75,6 +78,14 @@ npm run build:site
 `npm run build:site` also refreshes the static files at the repository root and
 generates matching CSP hashes. Neither command publishes the site. Frontend
 environment files are ignored by Git. Use only public browser credentials.
+
+[vercel.json](./vercel.json) publishes the committed static release using
+[scripts/stage-static.mjs](./scripts/stage-static.mjs). It copies only the built
+site into the deployment output and carries the security headers that Vercel
+does not read from `_headers`. This avoids rebuilding the frontend on the host
+without its local cloud configuration. Build locally and commit the generated
+assets before deploying. The configuration does not connect or publish a project
+by itself.
 
 Without cloud configuration, development uses the original fictional seed data.
 `/#inbox` on the dev server enables the existing fictional inbox fixture.
