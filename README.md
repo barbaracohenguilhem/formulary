@@ -1,5 +1,8 @@
 # Formulary
 
+**Registro para retomar:** [HANDOFF.md](./HANDOFF.md) — mudanças concluídas,
+validações, pendências e bloqueios de publicação ao encerrar em 07/10/2026.
+
 Formulary gives Carla a short email briefing and a prepared response or next action.
 She reviews it, files irrelevant work, approves it, or gives quick feedback. Barbara
 receives the resulting handoffs and corrections in her own queue.
