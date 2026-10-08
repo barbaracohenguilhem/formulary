@@ -1,0 +1,281 @@
+/* The bottle label: the frame every non-index screen is printed on. */
+
+.frame {
+  --cap-rule: 14px 0 18px;
+  border: var(--rule);
+  background: var(--label);
+  padding: 26px var(--gutter-label) var(--gutter-label);
+}
+
+.frameSlip {
+  --cap-rule: 13px 0 15px;
+  padding: 24px 20px 10px;
+}
+
+.frameCompose {
+  --cap-rule: 14px 0 14px;
+  padding: 26px var(--gutter-label) 20px;
+}
+
+.cap {
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  text-indent: 0.42em; /* centre the tracked line on its optical middle */
+}
+
+.capMuted {
+  color: var(--muted);
+}
+
+.rule {
+  height: 0;
+  border-top: var(--rule);
+  margin: var(--cap-rule);
+}
+
+.name {
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 24px;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+  text-align: center;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+
+.sub {
+  margin-top: 12px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  text-indent: 0.26em;
+  color: var(--muted);
+}
+
+/* ——— spec rows: label left, value right ——— */
+
+.specs {
+  margin: 20px 0 0;
+  border-top: var(--rule);
+  padding-top: 6px;
+}
+
+.spec {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--hairline-label);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.spec:last-child {
+  border-bottom: 0;
+}
+
+.specKey {
+  color: var(--muted);
+  flex: none;
+}
+
+.specValue {
+  text-align: right;
+  margin-right: -0.18em;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* A value that is a name or an address keeps its own case. */
+.specPlain {
+  text-transform: none;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+}
+
+.notes {
+  margin: 0;
+  border-top: var(--rule);
+  padding-top: 16px;
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+/* ——— what the robot prepared ——— */
+
+.block {
+  margin-top: 18px;
+}
+
+.blockKey {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.blockText {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+/* The drafted reply sits inset on the label, ready to be approved as it stands. */
+.inset {
+  margin-top: 20px;
+  padding: 15px 14px 16px;
+  border: var(--rule);
+  background: var(--paper);
+}
+
+.inset .blockKey {
+  text-align: center;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  margin-bottom: 12px;
+}
+
+.inset .blockText {
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+/* no draft yet: why, in muted mono */
+.insetMuted .blockText {
+  color: var(--muted);
+  text-align: center;
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  line-height: 1.9;
+}
+
+/* the one control that asks the robot: a tracked mono line, a full 44px target */
+.insetAct {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 12px;
+  border-top: var(--rule);
+  padding: 13px 0 0;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--ink);
+  transition: opacity 120ms linear;
+}
+
+.insetAct:hover {
+  opacity: 0.5;
+}
+
+.insetAct:disabled {
+  color: var(--muted);
+  opacity: 1;
+}
+
+/* ——— to hand ——— */
+
+.toHand {
+  margin-top: 20px;
+  border-top: var(--rule);
+  padding-top: 15px;
+}
+
+.refs {
+  margin-top: 11px;
+}
+
+.ref {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--hairline-label);
+}
+
+.ref:last-child {
+  border-bottom: 0;
+}
+
+.refKey {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.refValue {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  text-align: right;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+/* ——— the slip, printed inside the label ——— */
+
+.slip {
+  margin-top: 18px;
+  background: var(--ink);
+  color: var(--ecru);
+  padding: 13px 14px 14px;
+}
+
+.slipHead,
+.slipFoot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--ecru-2);
+}
+
+.slipHead {
+  letter-spacing: 0.3em;
+}
+
+.slipFoot {
+  letter-spacing: 0.24em;
+  margin-top: 9px;
+}
+
+.slipBody {
+  margin: 9px 0 0;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ecru);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

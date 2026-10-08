@@ -1,0 +1,59 @@
+/* A screen: fixed head, scrolling body, optional fixed foot. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  animation: rise var(--dur) var(--ease-rise) both;
+}
+
+.head {
+  flex: none;
+  background: var(--paper);
+  padding: max(60px, calc(env(safe-area-inset-top, 0px) + 12px)) var(--gutter) 0;
+}
+
+/* Framed by claude.ai, the host's own bar sits above the page: no status bar to clear, so the head sits close under it. */
+:global(.framed) .head {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 22px);
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 var(--gutter) 36px;
+}
+
+/* The bar across the top of a label screen: back on the left, lot on the right. */
+.lotbar {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+/* 44px target, kept out of the layout by the fixed 40px row above. */
+.back {
+  height: 44px;
+  padding-right: 20px;
+  display: inline-flex;
+  align-items: center;
+  transition: opacity 120ms linear;
+}
+
+.back:hover {
+  opacity: 0.5;
+}
+
+.lot {
+  color: var(--muted);
+  margin-right: -0.3em; /* absorb the trailing letter-space so it reads flush right */
+}

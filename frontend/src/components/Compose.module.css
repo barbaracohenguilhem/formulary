@@ -1,0 +1,83 @@
+/* Blank label — §4.4 */
+
+.title {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 2px 0 14px;
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 21px;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--ink);
+  background: none;
+}
+
+.rule {
+  height: 0;
+  border-top: var(--rule);
+  margin: 2px 0 4px;
+}
+
+.option {
+  height: 46px; /* the 44px chip plus the separator's breathing room */
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--hairline-label);
+}
+
+.option:last-child {
+  height: 44px; /* no separator to clear */
+  border-bottom: 0;
+}
+
+.optionKey {
+  flex: none;
+  width: 62px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.chips {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0 9px;
+}
+
+/*
+ * The touch target is the chip's own 44px box — it must not depend on padding or
+ * font-size. (This regressed once; keep the explicit height.)
+ */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition:
+    color 120ms linear,
+    opacity 120ms linear;
+}
+
+.chip:hover {
+  opacity: 0.7;
+}
+
+.chipOn {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}

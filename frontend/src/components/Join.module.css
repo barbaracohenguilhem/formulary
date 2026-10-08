@@ -1,0 +1,95 @@
+/* A device asking to join: set like the instruction slip — ink, ecru, mono — so it reads as a note to act on. */
+.join {
+  margin-top: 18px;
+  background: var(--ink);
+  color: var(--ecru);
+  padding: 13px 14px 6px;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ecru-2);
+}
+
+.ask {
+  display: block;
+  margin-top: 12px;
+}
+
+.hint {
+  display: block;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ecru-2);
+}
+
+/* the two words, typed as they're shown on the new phone: set like the words themselves */
+.words {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 4px 0 6px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(242, 239, 231, 0.4);
+  border-radius: 0;
+  color: var(--ecru);
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  outline: none;
+}
+
+.words::placeholder {
+  color: rgba(242, 239, 231, 0.28);
+}
+
+.words:focus {
+  border-bottom-color: var(--ecru);
+}
+
+.acts {
+  display: flex;
+  gap: 2px;
+  margin-top: 12px;
+}
+
+.act {
+  flex: 1;
+  min-height: 44px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.24em;
+  text-indent: 0.24em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--ecru);
+  border-top: 1px solid rgba(242, 239, 231, 0.24);
+  transition: opacity 120ms linear;
+}
+
+.act:hover {
+  opacity: 0.6;
+}
+
+.act:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.allow {
+  color: var(--ink);
+  background: var(--ecru);
+  border-top-color: var(--ecru);
+}

@@ -1,0 +1,25 @@
+/* A receipt that slides up from the bottom of the column and goes away on its own. */
+
+.toast {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  background: var(--ink);
+  color: var(--ecru);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.6;
+  padding: 14px var(--gutter) calc(14px + env(safe-area-inset-bottom, 0px));
+  transform: translateY(110%);
+  transition: transform 280ms var(--ease-rise);
+  pointer-events: none;
+}
+
+.show {
+  transform: none;
+}

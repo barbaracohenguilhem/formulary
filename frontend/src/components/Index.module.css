@@ -1,0 +1,395 @@
+/* The index: header, hero, rows, tab bar — §4.1 */
+
+.top {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wordmark {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+/* 44px target inside a fixed 40px row — it overflows without moving anything. */
+.new {
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-right: -0.3em;
+  transition: opacity 120ms linear;
+}
+
+.new:hover {
+  opacity: 0.5;
+}
+
+.tally {
+  margin-top: 18px;
+  padding-bottom: 10px;
+  border-bottom: var(--rule-strong);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tally > :last-child {
+  margin-right: -0.2em;
+}
+
+/* The tally doubles as the sync control on an inbox: tap it to refresh. */
+.sync {
+  transition: opacity 120ms linear;
+}
+
+.sync:hover {
+  opacity: 0.5;
+}
+
+.syncBusy {
+  opacity: 0.45;
+}
+
+/* ——— hero: the first open lot ——— */
+
+.hero {
+  background: var(--ink);
+  color: var(--ecru);
+  padding: 20px;
+  margin-top: 18px;
+}
+
+.heroKick {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ecru-2);
+}
+
+.heroKick > :last-child {
+  margin-right: -0.3em;
+}
+
+.heroTitle {
+  display: block;
+  width: 100%;
+  margin-top: 13px;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 27px;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  color: var(--ecru);
+  text-align: left;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+  transition: opacity 120ms linear;
+}
+
+.heroTitle:hover {
+  opacity: 0.7;
+}
+
+.heroMeta {
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ecru-2);
+}
+
+.heroMeta b {
+  font-weight: 400;
+  color: var(--ecru);
+}
+
+.heroDone {
+  width: 100%;
+  height: 48px;
+  margin-top: 20px;
+  background: var(--ecru);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  text-indent: 0.3em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 120ms linear;
+}
+
+.heroDone:hover {
+  opacity: 0.7;
+}
+
+.heroDone:active {
+  transform: scale(0.99);
+}
+
+.heroDone:disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* ——— section kicker ——— */
+
+.section {
+  margin: 26px 0 2px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.section > :last-child {
+  margin-right: -0.3em;
+}
+
+/* ——— rows ——— */
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 15px 0 16px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.rowSaving .body {
+  opacity: 0.55;
+}
+
+.open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  text-align: left;
+  transition: opacity 120ms linear;
+}
+
+.open:hover {
+  opacity: 0.7;
+}
+
+.open:active {
+  transform: scale(0.99);
+}
+
+.serial {
+  flex: none;
+  width: 34px;
+  padding: 3px 0 0;
+  font-family: var(--mono);
+  font-size: 9px;
+  line-height: 14px;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: var(--muted);
+}
+
+.serialDone {
+  background: var(--ink);
+  color: var(--ecru);
+  animation: ink var(--dur) var(--ease-ink) both;
+}
+
+.body {
+  min-width: 0;
+  transition: opacity 120ms linear;
+}
+
+.title {
+  display: block;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 1.26;
+  letter-spacing: -0.012em;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+.titleDone {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.meta {
+  display: block;
+  margin-top: 7px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.metaLead {
+  color: var(--ink);
+}
+
+/*
+ * Checkbox: an 18px square inside a 44px target. The negative margins keep the
+ * target out of the layout so the row keeps its 15/16 rhythm.
+ */
+.check {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: -11px -14px -11px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkBox {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--ink);
+  transition: background-color 120ms linear;
+}
+
+.checkBoxOn {
+  background: var(--ink);
+}
+
+/* ——— states of an inbox: waiting, empty, refused ——— */
+
+.state {
+  padding: 32px 0;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  line-height: 1.9;
+  text-wrap: pretty;
+}
+
+.foot {
+  display: inline-block;
+  margin-top: 22px;
+  padding: 8px 0;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+  text-align: left;
+  transition: color 120ms linear;
+}
+
+.foot:hover {
+  color: var(--ink);
+}
+
+.note {
+  display: block;
+  margin-top: 14px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Skeleton rows while the first sync is in flight: the same rhythm, no words. */
+.skelTitle {
+  display: block;
+  height: 17px;
+  width: 78%;
+  background: var(--hairline);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.skelMeta {
+  display: block;
+  height: 9px;
+  width: 46%;
+  margin-top: 7px;
+  background: var(--hairline-label);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+/* ——— tab bar ——— */
+
+.tabs {
+  flex: none;
+  height: calc(56px + max(26px, env(safe-area-inset-bottom, 0px)));
+  padding: 0 14px max(26px, env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--hairline);
+  background: var(--paper);
+  display: flex;
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: opacity 120ms linear;
+}
+
+.tab:hover {
+  opacity: 0.5;
+}
+
+.tabOn {
+  color: var(--ink);
+}
+
+.tab span {
+  padding-bottom: 4px;
+  text-indent: 0.24em;
+}
+
+.tabOn span {
+  border-bottom: var(--rule-strong);
+}
+
+/* the robot's one line: under the tally, above the hero, never in place of the list */
+.robotLine {
+  margin-top: 16px;
+  line-height: 1.8;
+  text-wrap: pretty;
+}

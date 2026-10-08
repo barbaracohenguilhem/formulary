@@ -1,0 +1,23 @@
+/*
+ * Mobile-first. On a phone the column is the whole viewport; on a wider screen it
+ * sits centred on the desk so the proportions stay the ones the label was drawn for.
+ */
+
+.desk {
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  background: var(--desk);
+}
+
+.column {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--frame);
+  min-height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  background: var(--paper);
+}

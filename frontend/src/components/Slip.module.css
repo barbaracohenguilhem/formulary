@@ -1,0 +1,193 @@
+/* Instruction slip — §4.3 */
+
+.name {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  text-align: center;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+
+.to {
+  margin-top: 9px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  text-indent: 0.26em;
+  color: var(--muted);
+}
+
+/* ——— mode switch ——— */
+
+.modes {
+  display: flex;
+  gap: 6px;
+  margin-top: 18px;
+}
+
+.mode {
+  flex: 1;
+  height: 44px;
+  border: 1.5px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-indent: 0.2em;
+  transition:
+    background-color 120ms linear,
+    color 120ms linear;
+}
+
+.modeOn {
+  background: var(--ink);
+  color: var(--ecru);
+}
+
+/* ——— voice ——— */
+
+.voice {
+  margin-top: 20px;
+}
+
+.wave {
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+.bar {
+  width: 3px;
+  background: var(--ink);
+  opacity: 0.28;
+  transition: height 200ms linear;
+}
+
+.barLive {
+  opacity: 1;
+}
+
+.timer {
+  margin-top: 12px;
+  text-align: center;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+  font-variant-numeric: tabular-nums;
+}
+
+/* What the dictation heard, as it will be saved. */
+.transcript {
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+  min-height: 20px;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+.transcriptHint {
+  text-align: center;
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-indent: 0.18em;
+  line-height: 1.8;
+  color: var(--muted);
+}
+
+.record {
+  width: 100%;
+  height: 52px;
+  margin-top: 14px;
+  border: 1.5px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  text-indent: 0.3em;
+  transition:
+    background-color 120ms linear,
+    color 120ms linear;
+}
+
+.recordOn {
+  background: var(--ink);
+  color: var(--ecru);
+}
+
+.record:active {
+  transform: scale(0.99);
+}
+
+/* ——— written ——— */
+
+.textarea {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  min-height: 124px;
+  resize: none;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ink);
+  background: none;
+}
+
+/* ——— approval ——— */
+
+.approval {
+  margin-top: 8px;
+  height: 56px;
+  border-top: 1px solid var(--hairline-label);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.box {
+  position: relative;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--ink);
+  transition: background-color 120ms linear;
+}
+
+.box::after {
+  content: '';
+  position: absolute;
+  inset: -13px;
+}
+
+.boxOn {
+  background: var(--ink);
+}
+
+.approvalLabel {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
