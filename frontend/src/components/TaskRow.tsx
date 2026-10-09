@@ -36,7 +36,7 @@ export function TaskRow({
         type="button"
         role="checkbox"
         aria-checked={task.done}
-        aria-label={task.done ? `reopen ${task.title}` : awaitingBarbara ? `${task.title} is with barbara` : task.prepared ? `approve ${task.title} for barbara` : `mark ${task.title} as done`}
+        aria-label={queued ? `${task.title} reply queued` : task.done ? `reopen ${task.title}` : awaitingBarbara ? `${task.title} is with barbara` : task.prepared ? `approve ${task.title} for barbara` : `mark ${task.title} as done`}
         className={s.check}
         disabled={saving || awaitingBarbara || queued}
         onClick={onToggle}
