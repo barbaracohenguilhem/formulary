@@ -97,8 +97,6 @@ export default function App() {
             }}
             onPatch={actions.patchSlip}
             onRecord={actions.record}
-            onAddFiles={actions.addFeedbackFiles}
-            onRemoveFile={actions.removeFeedbackFile}
             onHand={actions.hand}
           />
         )}
