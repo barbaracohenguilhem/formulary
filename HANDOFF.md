@@ -1,5 +1,69 @@
 # Formulary — registro para retomar
 
+## Publicação concluída — Cloudflare Pages, 08/10/2026
+
+**A nova versão está publicada em [formulary-bfk.pages.dev](https://formulary-bfk.pages.dev/).**
+Essa confirmação substitui o estado de publicação pendente nos registros históricos abaixo.
+
+- Conta Cloudflare: `017dd36e068631da88d164cc83f5a25d`; projeto Pages: `formulary`.
+- A usuária autorizou a integração GitHub limitada a `barbaracohenguilhem/formulary`.
+- Branch de produção configurada: `copilot/summarize-last-3-merged-prs`.
+- Commit remoto conferido antes da publicação: `dac0a3e360a0aa780a37b046b9b061eabcc9f237`.
+- Framework: None; raiz: repositório; comando: `node scripts/stage-static.mjs`;
+  saída: `dist`; variável de build: `SKIP_DEPENDENCY_INSTALL=true`.
+- Não houve contratação de plano, inserção de cartão ou compra de domínio.
+- A Cloudflare confirmou sucesso no deploy. O navegador abriu a tela de
+  pareamento do Formulary no endereço novo.
+- HTML, JavaScript e CSS retornaram HTTP 200 no navegador, com tipos corretos,
+  CSP esperado e SHA-256 idêntico aos arquivos locais da versão testada.
+  A consulta HTTP pelo cliente Python retornou 403; a validação dos arquivos
+  foi concluída por requisições normais no navegador, sem alterar proteção.
+- Bundle publicado: `index-BBg6BvsV.js`; CSS: `index-P3eGqgqR.css`.
+
+**Próxima etapa: parear os dispositivos no endereço novo.** Cada origem tem
+sua própria sessão. No celular da Barbara, abrir o novo link e escolher
+“i’m barbara”; um aparelho já autorizado deve aprovar as duas palavras pelo
+fluxo existente. Fazer o equivalente para Carla. Manter o site anterior
+disponível até concluir os pareamentos. Não copiar tokens entre origens.
+
+Ainda falta validar o fluxo real entre as duas pessoas, com os dados existentes.
+A publicação e o carregamento foram verificados; o acesso aos e-mails após
+pareamento e as permissões reais do banco não foram testados neste passo.
+Também continuam pendentes envio real, anexos e consulta ao workspace.
+
+Novos commits nessa branch acionam o build da Cloudflare. Como ele usa os
+arquivos estáticos já gerados, mudanças no código-fonte precisam passar por
+`npm run build:site` e incluir os bundles atualizados no commit. Não trocar
+para `main` antes de incorporar nela os ajustes e a configuração testados.
+O retorno de um futuro OAuth Gmail ainda pode depender de `meta/robot.appUrl`;
+essa configuração do backend não foi alterada nesta publicação.
+
+## Direção atualizada na retomada — 08/10/2026
+
+Barbara retomou a conversa e pediu para avançar por partes. Depois, rejeitou
+explicitamente a Vercel por custo. **A rota de publicação na Vercel foi
+descartada.** Não continuar a reconexão nem a instalação da CLI da Vercel como
+próximo passo deste projeto. As referências à Vercel nas seções abaixo descrevem
+o histórico e não a direção atual.
+
+A alternativa adotada é **Cloudflare Pages Free** para o frontend estático.
+A documentação oficial confirma início sem cartão e requisições estáticas
+gratuitas. Conta/projeto e publicação foram concluídos conforme o registro acima.
+Custos e limites do banco/robô são separados da
+hospedagem da interface; não tratar o app inteiro como custo zero sem verificá-los.
+
+Referências: [Cloudflare Pages](https://www.cloudflare.com/products/pages/),
+[preços de conteúdo estático](https://developers.cloudflare.com/pages/functions/pricing/)
+e [limites do plano](https://developers.cloudflare.com/pages/platform/limits/).
+
+Na retomada, a branch local e a remota foram confirmadas no commit `dac0a3e`,
+com árvore de trabalho limpa. Assim, a pendência de sincronização descrita no
+registro histórico abaixo foi resolvida. A nova versão foi publicada no Pages.
+A mudança de endereço exige validar o pareamento das duas
+pessoas e os links/configurações que ainda apontem para o endereço anterior.
+
+---
+
 Atualizado em **07/10/2026, 22:55 (America/Sao_Paulo)**.
 
 **Trabalho encerrado por hoje a pedido da Barbara.** Este documento registra o

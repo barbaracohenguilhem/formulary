@@ -3,6 +3,17 @@
 **Registro para retomar:** [HANDOFF.md](./HANDOFF.md) — mudanças concluídas,
 validações, pendências e bloqueios de publicação ao encerrar em 07/10/2026.
 
+**Direção atual:** hospedagem gratuita; Vercel descartada pela usuária.
+**Publicado no Cloudflare Pages:** [formulary-bfk.pages.dev](https://formulary-bfk.pages.dev/).
+O endereço novo exige parear os dispositivos novamente. O teste com Carla e
+Barbara em dispositivos reais ainda está pendente; detalhes em [HANDOFF.md](./HANDOFF.md).
+As configurações Vercel abaixo ficam apenas como histórico.
+
+O Pages está ligado à branch `copilot/summarize-last-3-merged-prs`, com framework
+None, comando `node scripts/stage-static.mjs`, saída `dist` e
+`SKIP_DEPENDENCY_INSTALL=true`. Ele publica o pacote estático commitado: mudanças
+na fonte exigem executar `npm run build:site` e incluir os bundles atualizados.
+
 Formulary gives Carla a short email briefing and a prepared response or next action.
 She reviews it, files irrelevant work, approves it, or gives quick feedback. Barbara
 receives the resulting handoffs and corrections in her own queue.

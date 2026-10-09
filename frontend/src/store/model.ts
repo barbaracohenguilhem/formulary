@@ -1,4 +1,4 @@
-import type { Context, Screen, Slip, SlipMode, Tab, Task, TaskEvent } from '../types';
+import type { Context, Screen, Slip, SlipMode, Tab, Task, TaskEvent, FeedbackRecipient, FeedbackTone, FeedbackUpload } from '../types';
 import { OWNER, STUDIO, seedTasks } from '../data/seed';
 import { clock, dayLabel, doneStampAt, shiftDays, stamp, thisFriday } from '../lib/format';
 import { bucketOf } from '../lib/inbox';
@@ -57,6 +57,12 @@ export type Draft = {
 };
 
 export type SlipDraft = {
+  requestId: string;
+  recipient: FeedbackRecipient;
+  tone: FeedbackTone | null;
+  files: FeedbackUpload[];
+  proposalText: string;
+  editProposal: boolean;
   mode: SlipMode;
   note: string;
   secs: number;
@@ -112,7 +118,7 @@ export type State = {
   seededOn: string;
 };
 
-export const emptySlip = (): SlipDraft => ({ mode: 'voice', note: '', secs: 0, approval: true });
+export const emptySlip = (): SlipDraft => ({ requestId: crypto.randomUUID(), recipient: 'robot', tone: null, files: [], proposalText: '', editProposal: false, mode: 'written', note: '', secs: 0, approval: true });
 
 export const emptyDraft = (): Draft => ({ title: '', context: 'studio', due: 'today', est: 15 });
 
@@ -322,6 +328,9 @@ export function reducer(state: State, action: Action, now = new Date()): State {
         // a slip the robot already answered starts a fresh note; one still waiting is edited as it stands
         slip: task?.slip && task.slip.status !== 'returned'
           ? {
+              ...emptySlip(),
+              recipient: task.slip.to === 'barbara' ? 'barbara' : 'robot',
+              tone: task.slip.tone ?? null,
               mode: task.slip.mode,
               note: task.slip.note ?? '',
               secs: task.slip.secs ?? 0,
