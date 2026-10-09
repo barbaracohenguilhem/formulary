@@ -203,6 +203,8 @@ export function useFormulary() {
   robotRef.current = state.robot;
   /** The cloud build: lots in Supabase, the robot on the server. */
   const cloud = useRef(false);
+  /** The deployed cloud robot can run through the scheduled claude.ai routine. */
+  const routine = useRef(false);
 
   useEffect(() => {
     save(state);
@@ -273,6 +275,7 @@ export function useFormulary() {
 
   /** Sweep new mail into unread stubs — Gmail and the store only, no Claude. */
   const count = useCallback(async () => {
+    if (cloud.current && routine.current) return; // the routine sweeps on its own schedule
     if (cloud.current) {
       if (runCtl.current || onCtl.current) return;
       robot({ phase: 'listing' });
@@ -455,6 +458,16 @@ export function useFormulary() {
 
   /* ——— the cloud build: its own address, Supabase behind it, a device joined once ——— */
 
+  /** The routine reads the inbox independently; surface a late run without calling the server robot. */
+  const routineStatus = (): Failure | null => {
+    const last = Date.parse(syncMeta.current.lastRunAt ?? '');
+    if (!last || Date.now() - last < 3 * 3_600_000) return null;
+    const when = new Date(last);
+    const at = `${String(when.getHours()).padStart(2, '0')}:${String(when.getMinutes()).padStart(2, '0')}`;
+    const day = Date.now() - last > 20 * 3_600_000 ? `${String(when.getDate()).padStart(2, '0')}.${String(when.getMonth() + 1).padStart(2, '0')} ` : '';
+    return { source: 'gmail', code: 'routine_late', text: `the robot last read the inbox at ${day}${at} · it runs every hour`, retryable: false, retryAfterMs: 0, ambiguous: false, terminal: false };
+  };
+
   /** What the server says the robot is missing, in her words; null when it can run. */
   const statusFailure = (st: RobotStatus): Failure | null => {
     if (!st.google) return { ...describe({ code: 'server_not_connected' }, 'gmail'), text: 'google isn’t set up yet · add the client id and secret in supabase' };
@@ -478,8 +491,14 @@ export function useFormulary() {
   const cloudStatus = useCallback(async () => {
     try {
       const st = await call<RobotStatus>('robot', { action: 'status' });
+      if (!st.google || !st.gmail.connected) {
+        routine.current = true;
+        robot({ able: true, routine: true, failure: routineStatus() });
+        return null;
+      }
+      routine.current = false;
       const failure = statusFailure(st);
-      robot({ able: !failure, failure });
+      robot({ able: !failure, routine: false, failure });
       return !failure || failure.source === 'claude' ? st : null;
     } catch (e) {
       robot({ able: false, failure: cloudFailure(e) });
@@ -611,6 +630,12 @@ export function useFormulary() {
   const readMail = useCallback(async () => {
     if (runCtl.current) {
       runCtl.current.abort();
+      return;
+    }
+    if (cloud.current && routine.current) {
+      const failure = routineStatus();
+      robot({ failure });
+      toast(failure ? failure.text : 'the robot reads the inbox every hour · new mail appears by itself', 4200);
       return;
     }
     if (cloud.current) {
@@ -756,11 +781,37 @@ export function useFormulary() {
       runCtl.current = null;
       robot({ phase: 'idle', done: 0, total: 0, on: null, run: false, failure, able: !!mcp.current && !!sample.current && owner.current });
     }
-  }, [progress, robot]);
+  }, [progress, robot, toast]);
 
   /** One lot, on her gesture: "prepare the reply", or a slip handed to the robot. */
   const draftOne = useCallback(
     async (id: string, revision?: { notes: string[] }) => {
+      if (cloud.current && routine.current) {
+        // Revision notes already live on the lot. A new draft request waits for the routine.
+        if (!revision) {
+          const store = db.current;
+          if (!store) return;
+          try {
+            await serial(id, async () => {
+              const ref = store.doc(`lots/${id}`);
+              const snap = await ref.get();
+              const doc = snap.exists ? readLot(snap.data()) : null;
+              if (!doc || doc.completed || doc.review !== 'pending' || (doc.robot && doc.robot.state !== 'failed')) {
+                throw { message: 'this lot has moved on · refresh before asking for another draft' };
+              }
+              const patch = { robot: { state: 'queued' as const, at: nowIso() }, draftFail: null, updatedAt: nowIso() };
+              await ref.update(patch);
+              openLots.current = openLots.current.map((lot) => lot.id === id ? { id, doc: { ...doc, ...patch } } : lot);
+              render();
+            });
+          } catch {
+            toast('couldn’t ask the robot · try again', 4000);
+            return;
+          }
+        }
+        toast(revision ? 'sent · the robot answers your note within the hour' : 'queued · the robot prepares it within the hour', 4200);
+        return;
+      }
       if (cloud.current) {
         if (runCtl.current || onCtl.current) {
           toast('the robot is busy · your lot is next when it finishes', 4000);
@@ -817,7 +868,7 @@ export function useFormulary() {
       }
       if (f) toast(revision ? `${f.text} · your note is kept` : f.text, 5200);
     },
-    [robot, toast],
+    [robot, toast, render],
   );
 
   /** Stop what the robot is doing for her on this lot (leaving the label, or the stop control). */

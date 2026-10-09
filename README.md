@@ -1,5 +1,19 @@
 # Formulary
 
+**Registro para retomar:** [HANDOFF.md](./HANDOFF.md) — mudanças concluídas,
+validações, pendências e bloqueios de publicação ao encerrar em 07/10/2026.
+
+**Direção atual:** hospedagem gratuita; Vercel descartada pela usuária.
+**Publicado no Cloudflare Pages:** [formulary-bfk.pages.dev](https://formulary-bfk.pages.dev/).
+O endereço novo exige parear os dispositivos novamente. O teste com Carla e
+Barbara em dispositivos reais ainda está pendente; detalhes em [HANDOFF.md](./HANDOFF.md).
+As configurações Vercel abaixo ficam apenas como histórico.
+
+O Pages está ligado à branch `copilot/summarize-last-3-merged-prs`, com framework
+None, comando `node scripts/stage-static.mjs`, saída `dist` e
+`SKIP_DEPENDENCY_INSTALL=true`. Ele publica o pacote estático commitado: mudanças
+na fonte exigem executar `npm run build:site` e incluir os bundles atualizados.
+
 Formulary gives Carla a short email briefing and a prepared response or next action.
 She reviews it, files irrelevant work, approves it, or gives quick feedback. Barbara
 receives the resulting handoffs and corrections in her own queue.
@@ -45,6 +59,9 @@ only reloads handoffs; it does not trigger the email robot.
   or an atomic compare-and-swap upgrade to `doc_merge`.
 - Existing devices must already be paired with the correct person. An old local
   role-picker choice does not override their authenticated identity.
+- The deployed scheduled robot is preserved: when the server reports no Gmail
+  connection, new draft requests queue for the routine rather than calling the
+  inactive server robot. Queued proposals cannot be approved until prepared.
 
 ## Editable source and static output
 
@@ -75,6 +92,14 @@ npm run build:site
 `npm run build:site` also refreshes the static files at the repository root and
 generates matching CSP hashes. Neither command publishes the site. Frontend
 environment files are ignored by Git. Use only public browser credentials.
+
+[vercel.json](./vercel.json) publishes the committed static release using
+[scripts/stage-static.mjs](./scripts/stage-static.mjs). It copies only the built
+site into the deployment output and carries the security headers that Vercel
+does not read from `_headers`. This avoids rebuilding the frontend on the host
+without its local cloud configuration. Build locally and commit the generated
+assets before deploying. The configuration does not connect or publish a project
+by itself.
 
 Without cloud configuration, development uses the original fictional seed data.
 `/#inbox` on the dev server enables the existing fictional inbox fixture.

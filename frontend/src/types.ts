@@ -32,6 +32,41 @@ export type Action = {
 };
 
 export type SlipMode = 'voice' | 'written';
+export type FeedbackRecipient = 'robot' | 'barbara';
+export type FeedbackTone = 'warmer' | 'formal' | 'concise' | 'direct';
+
+/** Private object references only; temporary download URLs are never persisted. */
+export type FeedbackFile = {
+  id: string;
+  name: string;
+  mime: string;
+  bytes: number;
+  kind: 'audio' | 'file';
+  bucket: 'formulary-feedback';
+  path: string;
+  text?: string;
+  extraction: 'ready' | 'partial' | 'unsupported';
+  issue?: string;
+};
+
+/** Kept only in the open composer, never serialized into localStorage. */
+export type FeedbackUpload = Omit<FeedbackFile, 'bucket' | 'path'> & {
+  file: File;
+  processing: 'reading' | 'ready' | 'error';
+  error?: string;
+};
+
+export type FeedbackRequest = {
+  id: string;
+  at: string;
+  recipient: FeedbackRecipient;
+  tone: FeedbackTone | null;
+  note: string;
+  mode: SlipMode;
+  secs?: number;
+  proposalText?: string;
+  files: FeedbackFile[];
+};
 export type SlipStatus = 'sent' | 'seen' | 'in_progress' | 'returned' | 'approved';
 
 /** Handing the lot back with instructions. */
@@ -44,6 +79,9 @@ export type Slip = {
   at: string; // HH:MM, or '' when the record keeps no time
   to: string; // recipient: 'the studio' | 'barbara' | 'the robot'
   status: SlipStatus;
+  requestId?: string;
+  tone?: FeedbackTone | null;
+  files?: FeedbackFile[];
 };
 
 export type DoneAt = {
@@ -57,7 +95,7 @@ export type ReviewState = 'pending' | 'approved' | 'changes' | 'barbara';
 
 /** What the robot is doing to a lot right now, when anything. */
 export type RobotState = {
-  state: 'preparing' | 'revising' | 'failed';
+  state: 'queued' | 'preparing' | 'revising' | 'failed';
   at: string;
   note?: string;
 };
@@ -76,6 +114,7 @@ export type Prepared = {
   updatedAt?: string;
   feedback?: string;
   feedbackMode?: SlipMode;
+  feedbackRequest?: FeedbackRequest;
   completed: boolean;
   receivedAt: string; // ISO
   dueAt?: string; // local date "YYYY-MM-DD" or datetime

@@ -37,6 +37,14 @@ function apply(doc: LotDoc, actor: 'carla' | 'barbara' | null, action: Parameter
 const task = (doc: LotDoc) => toTask('fixture', doc, new Date(NOW));
 const rejectsCode = (fn: () => unknown, code: string) => assert.throws(fn, (error: unknown) => (error as { code?: string }).code === code);
 
+test('scheduled robot requests survive loading and cannot be approved while queued', () => {
+  const queued = readLot(lot({ robot: { state: 'queued', at: NOW } }) as unknown as Record<string, unknown>);
+  assert.ok(queued);
+  assert.equal(task(queued).prepared?.robot?.state, 'queued');
+  rejectsCode(() => reviewPatch(queued, 'carla', { kind: 'approve' }, NOW), 'review_conflict');
+  assert.equal(queued.review, 'pending');
+});
+
 test('Carla approval is work for Barbara, not proof the action has been completed', () => {
   const original = lot();
   const approved = apply(original, 'carla', { kind: 'approve' });

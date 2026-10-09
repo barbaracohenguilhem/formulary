@@ -21,6 +21,24 @@ for (const file of readdirSync('assets')) {
 writeFileSync('index.html', html);
 writeFileSync('_headers', headers);
 writeFileSync('dist/_headers', headers);
+// Vercel ignores _headers; carry the same policies in its own configuration.
+const headerRules = [];
+for (const line of headers.split('\n')) {
+  if (line.startsWith('/')) {
+    headerRules.push({ source: line.replace(/\*$/, '(.*)'), headers: [] });
+  } else if (line.trim() && headerRules.length) {
+    const separator = line.indexOf(':');
+    if (separator > 0) headerRules.at(-1).headers.push({ key: line.slice(0, separator).trim(), value: line.slice(separator + 1).trim() });
+  }
+}
+writeFileSync('vercel.json', JSON.stringify({
+  version: 2,
+  framework: null,
+  installCommand: 'echo Using the committed static release',
+  buildCommand: 'node scripts/stage-static.mjs',
+  outputDirectory: 'dist',
+  headers: headerRules,
+}, null, 2) + '\n');
 for (const file of readdirSync('public')) cpSync(join('public', file), file, { recursive: true });
 // Remove only superseded bundles at the root, from the original flattened export.
 for (const file of ['index-DY6aDBy2.js', 'index-Covz3XYt.css', 'role.js']) {

@@ -17,6 +17,7 @@ export function TaskRow({
 }) {
   const [lead, tail] = rowMeta(task, now);
   const awaitingBarbara = !!task.prepared && !task.prepared.completed && ['barbara', 'changes'].includes(task.prepared.review);
+  const queued = task.prepared?.robot?.state === 'queued';
   return (
     <li className={[s.row, saving ? s.rowSaving : ''].join(' ')}>
       <button type="button" className={s.open} onClick={onOpen}>
@@ -37,7 +38,7 @@ export function TaskRow({
         aria-checked={task.done}
         aria-label={task.done ? `reopen ${task.title}` : awaitingBarbara ? `${task.title} is with barbara` : task.prepared ? `approve ${task.title} for barbara` : `mark ${task.title} as done`}
         className={s.check}
-        disabled={saving || awaitingBarbara}
+        disabled={saving || awaitingBarbara || queued}
         onClick={onToggle}
       >
         <span className={[s.checkBox, task.done ? s.checkBoxOn : ''].join(' ')} />
