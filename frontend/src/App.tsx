@@ -77,7 +77,7 @@ export default function App() {
             onComplete={() => actions.complete(selected)}
             onPrepare={() => actions.prepare(selected)}
             onAct={() => actions.act(selected)}
-            onHandBack={(recipient, tone) => actions.handoff(selected, recipient, tone)}
+            onHandBack={() => actions.handoff(selected)}
             onDiscard={() => actions.discard(selected)}
             onReturnProposal={(proposal) => actions.returnProposal(selected, proposal)}
           />
@@ -88,7 +88,6 @@ export default function App() {
             task={selected}
             slip={state.slip}
             recording={state.recording}
-            recordingBusy={state.recordingBusy}
             level={state.level}
             mode={state.mode}
             saving={!!state.pending[selected.id]}
@@ -98,8 +97,6 @@ export default function App() {
             }}
             onPatch={actions.patchSlip}
             onRecord={actions.record}
-            onAddFiles={actions.addFeedbackFiles}
-            onRemoveFile={actions.removeFeedbackFile}
             onHand={actions.hand}
           />
         )}
