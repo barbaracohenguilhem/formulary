@@ -191,3 +191,11 @@
   text-transform: uppercase;
   color: var(--ink);
 }
+
+.mode:disabled,
+.record:disabled,
+.textarea:disabled,
+.approval:disabled {
+  opacity: 0.3;
+  cursor: default;
+}

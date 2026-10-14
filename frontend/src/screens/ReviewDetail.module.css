@@ -35,3 +35,16 @@
   line-height: 1.6;
   resize: vertical;
 }
+
+.leaveDialog {
+  width: min(360px, calc(100% - 36px));
+  margin: auto;
+  padding: 18px;
+  border: var(--rule);
+  background: var(--label);
+  color: var(--ink);
+}
+
+.leaveDialog::backdrop {
+  background: rgb(0 0 0 / 40%);
+}

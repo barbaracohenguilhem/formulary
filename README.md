@@ -88,6 +88,15 @@ npm run test:browser
 npm run build:site
 ```
 
+Release-artifact follow-up for the feedback-save lock and unsaved-proposal guard:
+this source/test patch leaves the committed static release unchanged. A local
+`npm run build` without production configuration checks compilation only; its
+output is not a publishable release. Before releasing these fixes, an authorized
+maintainer must run `npm run build:site` with the existing valid public Supabase
+configuration and review/commit the generated assets and headers. Do not use the
+browser-test fixture configuration for a release build. No deployment is part
+of this patch.
+
 `npm run dev` serves the frontend on port 5178. `npm run build` emits `dist`;
 `npm run build:site` also refreshes the static files at the repository root and
 generates matching CSP hashes. Neither command publishes the site. Frontend

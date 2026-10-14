@@ -45,7 +45,7 @@ export function SlipScreen({
   const voice = slip.mode === 'voice' && canDictate;
   const hasAudio = slip.secs > 0;
   const hasNote = slip.note.trim().length > 0;
-  const ready = inbox ? hasNote && !recording && !saving : voice ? hasAudio : hasNote;
+  const ready = !saving && (inbox ? hasNote && !recording : voice ? hasAudio : hasNote);
   const live = recording || hasAudio;
 
   const recipient = inbox ? 'to barbara' : `to ${STUDIO}`;
@@ -65,7 +65,7 @@ export function SlipScreen({
         : 'start recording';
 
   return (
-    <Screen head={<LotBar back="cancel" onBack={onCancel} id={task.lot} />}>
+    <Screen head={<LotBar back="cancel" onBack={onCancel} backDisabled={saving} id={task.lot} />}>
       <LabelFrame variant="slip">
         <LabelCap>instruction slip</LabelCap>
         <h1 className={s.name}>{task.title}</h1>
@@ -78,6 +78,7 @@ export function SlipScreen({
                 key={m}
                 type="button"
                 aria-pressed={slip.mode === m}
+                disabled={saving}
                 className={[s.mode, slip.mode === m ? s.modeOn : ''].join(' ')}
                 onClick={() => {
                   if (m !== 'voice' && recording) onRecord(false);
@@ -110,6 +111,7 @@ export function SlipScreen({
             <button
               type="button"
               className={[s.record, recording ? s.recordOn : ''].join(' ')}
+              disabled={saving}
               onClick={() => onRecord(!recording)}
             >
               {recordLabel}
@@ -122,6 +124,7 @@ export function SlipScreen({
             className={s.textarea}
             placeholder={inbox ? PLACEHOLDER_INBOX : PLACEHOLDER_STUDIO}
             value={slip.note}
+            disabled={saving}
             rows={5}
             maxLength={inbox ? 4000 : undefined}
             autoFocus
@@ -134,6 +137,7 @@ export function SlipScreen({
             type="button"
             role="checkbox"
             aria-checked={slip.approval}
+            disabled={saving}
             className={s.approval}
             onClick={() => onPatch({ approval: !slip.approval })}
           >
