@@ -22,7 +22,7 @@ export function canApprove(task: Task): boolean {
   const p = task.prepared;
   if (!p) return true;
   return p.review === 'pending' && !p.completed &&
-    approvalReady(p.manual, p.proposal, p.robot, !!p.draftFail || p.unread || p.robot?.state === 'failed');
+    approvalReady(p.manual, p.proposal, p.robot, !!p.draftFail || p.robot?.state === 'failed');
 }
 
 function reject(code: 'review_forbidden' | 'review_conflict' | 'review_invalid', message: string): never {
@@ -44,7 +44,7 @@ export function reviewPatch(doc: LotDoc, actor: ReviewActor, action: ReviewActio
   switch (action.kind) {
     case 'approve':
       if (doc.review !== 'pending') reject('review_conflict', 'this lot is already with barbara · refresh to check');
-      if (!approvalReady(doc.kind === 'manual', doc.draft?.proposal, doc.robot, !!doc.draftFail || !!doc.triageFail || doc.robot?.state === 'failed')) {
+      if (!approvalReady(doc.kind === 'manual', doc.draft?.proposal, doc.robot, !!doc.draftFail || doc.robot?.state === 'failed')) {
         reject('review_conflict', 'this proposal is not ready · prepare it before approving for barbara');
       }
       return { review: 'approved', reviewedAt: now, completed: false, completedAt: null };

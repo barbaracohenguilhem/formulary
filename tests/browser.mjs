@@ -472,7 +472,7 @@ try {
     ['empty proposal', { draft: { proposal: '', at: timestamp, basis: 'thread' } }],
     ['whitespace proposal', { draft: { proposal: ' \n ', at: timestamp, basis: 'thread' } }],
     ['failed draft', { draftFail: { code: 'unavailable', at: timestamp } }],
-    ['failed triage', { triageFail: { code: 'unavailable', at: timestamp } }],
+    ['failed triage', { draft: null, triageFail: { code: 'unavailable', at: timestamp } }],
     ...['queued', 'preparing', 'revising', 'failed'].map((state) => [`robot ${state}`, { robot: { state, at: timestamp } }]),
   ];
   const beforeUnready = commits.length;
@@ -524,7 +524,7 @@ try {
   await refresh(barbara);
   assert.equal(await barbara.getByRole('button', { name: /proposal readiness reread/ }).count(), 0);
 
-  for (const [id, patch] of [['ready-email', {}], ['ready-manual', { kind: 'manual', draft: null }]]) {
+  for (const [id, patch] of [['ready-email', { triageFail: { code: 'unavailable', at: timestamp } }], ['ready-manual', { kind: 'manual', draft: null }]]) {
     lot(id, 930, id, patch);
     await carla.reload();
     await carla.getByRole('checkbox', { name: `approve ${id} for barbara`, exact: true }).waitFor();

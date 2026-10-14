@@ -51,7 +51,7 @@ const unreadyEmailStates: [string, Partial<LotDoc>][] = [
   ['empty proposal', { draft: { proposal: '', at: BEFORE, basis: 'thread' } }],
   ['whitespace proposal', { draft: { proposal: ' \n ', at: BEFORE, basis: 'thread' } }],
   ['failed draft with old proposal', { draftFail: { code: 'unavailable', at: BEFORE } }],
-  ['failed triage with old proposal', { triageFail: { code: 'unavailable', at: BEFORE } }],
+  ['failed triage without proposal', { draft: null, triageFail: { code: 'unavailable', at: BEFORE } }],
   ...(['queued', 'preparing', 'revising', 'failed'] as const).map((state): [string, Partial<LotDoc>] =>
     [`robot ${state}`, { robot: { state, at: BEFORE } }]),
 ];
@@ -69,7 +69,7 @@ for (const [name, patch] of unreadyEmailStates) {
 }
 
 test('valid email and draftless manual approval still lead to Barbara completion', () => {
-  for (const original of [lot(), lot({ kind: 'manual', draft: null })]) {
+  for (const original of [lot(), lot({ kind: 'manual', draft: null }), lot({ triageFail: { code: 'unavailable', at: BEFORE } })]) {
     assert.equal(canApprove(task(original)), true);
     const approved = apply(original, 'carla', { kind: 'approve' });
     assert.equal(canApprove(task(approved)), false);
@@ -80,6 +80,13 @@ test('valid email and draftless manual approval still lead to Barbara completion
   assert.equal(canApprove(task(lot({ completed: true }))), false);
   assert.equal(canApprove(task(lot({ review: 'barbara' }))), false);
   assert.equal(canApprove({ ...task(lot()), prepared: undefined }), true);
+});
+
+test('a corrected proposal can be approved despite an earlier triage failure', () => {
+  const waiting = lot({ review: 'barbara', draft: null, triageFail: { code: 'unavailable', at: BEFORE } });
+  const returned = apply(waiting, 'barbara', { kind: 'return', proposal: 'A complete corrected proposal.' });
+  assert.equal(canApprove(task(returned)), true);
+  assert.equal(isBarbaraPending(task(apply(returned, 'carla', { kind: 'approve' }))), true);
 });
 
 test('Carla approval is work for Barbara, not proof the action has been completed', () => {

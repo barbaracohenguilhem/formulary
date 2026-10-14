@@ -32,9 +32,11 @@ Barbara's authenticated device opens **From Carla** with only these incomplete l
 Barbara can edit a proposal and return it for Carla's approval. Marking approved work
 handled records work Barbara already performed. Approval is distinct from completion.
 Opening a feedback editor, starting dictation, or cancelling it creates no handoff.
-Email approval requires a non-empty prepared proposal without a draft/reading
+Email approval requires a non-empty prepared proposal without a draft
 failure or queued/in-progress robot work. All approval controls and the save-time
 validator enforce this; manual tasks can still be approved without a proposal.
+An earlier triage failure does not block approval of a successfully prepared or
+returned proposal.
 Failed writes keep the user's draft visible. Each action re-reads the lot and rejects
 an outdated decision before writing.
 
