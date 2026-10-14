@@ -12,6 +12,7 @@ const API = 'https://formulary-test.invalid';
 const timestamp = new Date(Date.now() - 3600_000).toISOString();
 const docs = new Map();
 const commits = [];
+const created = [];
 const apiCalls = [];
 const unexpected = [];
 const pageErrors = [];
@@ -110,6 +111,27 @@ async function fixtureRoute(route, who) {
     docs.set(body.p_path, next);
     commits.push({ who, path: body.p_path, patch: body.p_patch });
     return json(route, next);
+  }
+  if (url.pathname === '/rest/v1/rpc/acquire_lease') {
+    assert.equal(who, 'carla');
+    assert.equal(request.postDataJSON().p_path, 'counters/lot');
+    return json(route, { acquired: true });
+  }
+  if (url.pathname === '/rest/v1/docs' && request.method() === 'POST') {
+    const body = request.postDataJSON();
+    assert.equal(who, 'carla');
+    if (body.path === 'counters/lot') {
+      docs.set(body.path, body.doc);
+      return json(route, null, 201);
+    }
+    assert.match(body.path, /^lots\/m-/);
+    assert.equal(body.doc.kind, 'manual');
+    const allowed = heldWrites?.path === 'lots/*' ? await heldWrites.receive(body) : !failWrites;
+    if (!allowed) return json(route, { code: 'NETWORK_DOWN', message: 'fixture network failure' }, 503);
+    assert.equal(docs.has(body.path), false, 'new manual task must have its own document');
+    docs.set(body.path, body.doc);
+    created.push({ who, ...body });
+    return json(route, null, 201);
   }
   if (url.pathname === '/functions/v1/robot') {
     const action = request.postDataJSON().action;
@@ -552,6 +574,62 @@ try {
   assert.deepEqual(pageErrors, [], 'no unhandled browser errors');
   assert.equal(commits.length, beforeUnready + 5, 'only valid approvals, completions, and reopening should write');
   console.log('PASS: validator rechecks readiness; valid email and draftless manual approval/completion still work');
+
+  await carla.getByRole('button', { name: 'new +', exact: true }).click();
+  const composeTitle = carla.getByPlaceholder('what needs doing?');
+  await composeTitle.fill('Prepare the project checklist');
+  await carla.getByRole('button', { name: 'client', exact: true }).click();
+  await carla.getByRole('button', { name: 'tomorrow', exact: true }).click();
+  const creationWrites = holdWrites('lots/*');
+  // Two Enter events before React can render must still start only one save.
+  const leasesBefore = apiCalls.filter((call) => call.path === '/rest/v1/rpc/acquire_lease').length;
+  await composeTitle.evaluate((input) => {
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  });
+  const creationAttempt = await creationWrites.next();
+  assert.equal(creationAttempt.body.doc.subject, 'Prepare the project checklist');
+  assert.equal(creationAttempt.body.doc.triage.category, 'Client / Sales');
+  assert.equal(await composeTitle.isDisabled(), true, 'title must be locked until creation settles');
+  for (const name of ['project', 'client', 'finance', 'personal', 'today', 'tomorrow', 'this week', 'someday', '← cancel', 'printing…']) {
+    const button = carla.getByRole('button', { name, exact: true });
+    assert.equal(await button.isDisabled(), true, `${name} must be locked during creation`);
+    await button.evaluate((element) => element.click());
+  }
+  await capture(carla, '08-manual-task-saving');
+  creationAttempt.release(false);
+  await present(carla.getByRole('button', { name: 'print label', exact: true }));
+  assert.equal(await composeTitle.isDisabled(), false);
+  assert.equal(await composeTitle.inputValue(), 'Prepare the project checklist', 'failed creation must retain the draft');
+  assert.equal(await carla.getByRole('button', { name: 'client', exact: true }).getAttribute('aria-pressed'), 'true');
+  assert.equal(await carla.getByRole('button', { name: 'tomorrow', exact: true }).getAttribute('aria-pressed'), 'true');
+  assert.equal(await carla.getByRole('button', { name: '← cancel', exact: true }).isDisabled(), false);
+  assert.equal(apiCalls.filter((call) => call.path === '/rest/v1/rpc/acquire_lease').length, leasesBefore + 1, 'rapid submissions must reserve only one lot');
+  assert.equal(created.length, 0);
+  await capture(carla, '09-manual-task-failed');
+
+  await composeTitle.fill('Prepare the revised checklist');
+  await carla.getByRole('button', { name: 'finance', exact: true }).click();
+  await carla.getByRole('button', { name: 'today', exact: true }).click();
+  await carla.getByRole('button', { name: 'print label', exact: true }).click();
+  const creationRetry = await creationWrites.next();
+  assert.equal(creationRetry.body.doc.subject, 'Prepare the revised checklist');
+  assert.equal(creationRetry.body.doc.triage.category, 'Finance');
+  creationRetry.release(true);
+  await present(carla.getByRole('button', { name: 'new +', exact: true }));
+  creationWrites.stop();
+  assert.equal(created.length, 1, 'retry must create exactly one manual task');
+  await carla.reload();
+  await present(carla.getByRole('button', { name: /prepare the revised checklist/i }));
+  await carla.getByRole('button', { name: 'new +', exact: true }).click();
+  assert.equal(await composeTitle.inputValue(), '', 'successful creation must reset the next draft');
+  await composeTitle.fill('A separate unsaved task');
+  await carla.getByRole('button', { name: '← cancel', exact: true }).click();
+  await present(carla.getByRole('button', { name: 'new +', exact: true }));
+  assert.equal(created.length, 1, 'cancel after saving must not create another task');
+  assert.deepEqual(unexpected, [], 'all API usage must remain in the offline fixture contract');
+  assert.deepEqual(pageErrors, [], 'no unhandled browser errors');
+  console.log('PASS: manual creation locks edits/cancel, rejects rapid duplicates, preserves failed drafts, and permits one successful retry');
   console.log(`PASS: ${commits.length} expected writes, no real backend/Gmail traffic, no browser errors`);
 } finally {
   await browser?.close();

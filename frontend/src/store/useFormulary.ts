@@ -184,6 +184,7 @@ export function useFormulary() {
   const viewer = useRef<Who | null>(null);
   const refreshQueue = useRef<(() => Promise<void>) | null>(null);
   const writing = useRef(new Set<string>());
+  const creating = useRef(false);
   const archiveCapped = useRef(false);
   const config = useRef<RobotConfig>(DEFAULT_CONFIG);
   const syncMeta = useRef<SyncMeta>(readSync(undefined));
@@ -1219,7 +1220,7 @@ export function useFormulary() {
       },
 
       create: async () => {
-        if (actor === 'barbara') return;
+        if (actor === 'barbara' || creating.current) return;
         if (!inbox) return dispatch({ type: 'create' });
         const store = db.current;
         const title = state.draft.title.trim();
@@ -1231,6 +1232,7 @@ export function useFormulary() {
         const chip = COMPOSE_CONTEXTS.find((c) => c.chip === state.draft.context) ?? COMPOSE_CONTEXTS[0];
         const { bucket, dueAt } = resolveDue(state.draft.due);
         const id = `m-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+        creating.current = true;
         dispatch({ type: 'pending', id: 'new', on: true });
         try {
           const lot = await claimLots(store, holder.current, 1, maxLot() + 1);
@@ -1270,6 +1272,7 @@ export function useFormulary() {
           if (f.code === 'invalid_argument') dispatch({ type: 'connected', canWrite: false });
           toast(f.ambiguous ? 'couldn’t confirm the print · look for it in a moment' : `not printed · ${f.text}`, 5200);
         } finally {
+          creating.current = false;
           dispatch({ type: 'pending', id: 'new', on: false });
         }
       },

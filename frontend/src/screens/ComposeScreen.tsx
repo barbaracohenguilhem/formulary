@@ -36,7 +36,7 @@ export function ComposeScreen({
   const ready = draft.title.trim().length > 0 && !saving;
 
   return (
-    <Screen head={<LotBar back="cancel" onBack={onCancel} id={nextLot} arrow={false} />}>
+    <Screen head={<LotBar back="cancel" onBack={onCancel} backDisabled={saving} id={nextLot} arrow={false} />}>
       <LabelFrame variant="compose">
         <LabelCap>blank label</LabelCap>
 
@@ -45,6 +45,7 @@ export function ComposeScreen({
           ref={input}
           className={s.title}
           value={draft.title}
+          disabled={saving}
           placeholder="what needs doing?"
           autoFocus
           autoCapitalize="none"
@@ -60,14 +61,14 @@ export function ComposeScreen({
         <div>
           <Row label="context">
             {contexts.map((c) => (
-              <Chip key={c} on={context === c} onClick={() => onPatch({ context: c })}>
+              <Chip key={c} on={context === c} disabled={saving} onClick={() => onPatch({ context: c })}>
                 {c}
               </Chip>
             ))}
           </Row>
           <Row label="due">
             {DUES.map((d) => (
-              <Chip key={d} on={draft.due === d} onClick={() => onPatch({ due: d })}>
+              <Chip key={d} on={draft.due === d} disabled={saving} onClick={() => onPatch({ due: d })}>
                 {d}
               </Chip>
             ))}
@@ -75,7 +76,7 @@ export function ComposeScreen({
           {!inbox && (
             <Row label="estimate">
               {ESTIMATES.map((m) => (
-                <Chip key={m} on={draft.est === m} onClick={() => onPatch({ est: m })}>
+                <Chip key={m} on={draft.est === m} disabled={saving} onClick={() => onPatch({ est: m })}>
                   {estLabel(m)}
                 </Chip>
               ))}
@@ -100,9 +101,9 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
+function Chip({ on, disabled, onClick, children }: { on: boolean; disabled?: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" aria-pressed={on} className={[s.chip, on ? s.chipOn : ''].join(' ')} onClick={onClick}>
+    <button type="button" aria-pressed={on} disabled={disabled} className={[s.chip, on ? s.chipOn : ''].join(' ')} onClick={onClick}>
       {children}
     </button>
   );
