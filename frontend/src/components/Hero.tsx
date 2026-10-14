@@ -1,6 +1,7 @@
 import s from './Index.module.css';
 import type { Task } from '../types';
 import { lot, rowMeta } from '../lib/format';
+import { canApprove } from '../lib/review';
 
 /** The first open lot of the tab, set solid. Rotates to the next one once it is done. */
 export function Hero({
@@ -21,6 +22,7 @@ export function Hero({
   const [lead, tail] = rowMeta(task, now);
   const awaitingBarbara = !!task.prepared && !task.prepared.completed && ['barbara', 'changes'].includes(task.prepared.review);
   const queued = task.prepared?.robot?.state === 'queued';
+  const unready = !task.done && !canApprove(task);
   return (
     <section className={s.hero}>
       <div className={s.heroKick}>
@@ -34,8 +36,8 @@ export function Hero({
         <b>{lead}</b>
         {lead ? tail : tail.replace(/^ · /, '')}
       </div>
-      <button type="button" className={s.heroDone} disabled={saving || awaitingBarbara || queued} onClick={onDone}>
-        {saving ? 'saving…' : queued ? 'reply queued' : awaitingBarbara ? 'with barbara' : task.prepared ? 'approve for barbara' : 'mark as done'}
+      <button type="button" className={s.heroDone} disabled={saving || awaitingBarbara || queued || unready} onClick={onDone}>
+        {saving ? 'saving…' : queued ? 'reply queued' : awaitingBarbara ? 'with barbara' : unready ? 'proposal not ready' : task.prepared ? 'approve for barbara' : 'mark as done'}
       </button>
     </section>
   );

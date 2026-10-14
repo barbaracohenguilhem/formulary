@@ -32,6 +32,11 @@ Barbara's authenticated device opens **From Carla** with only these incomplete l
 Barbara can edit a proposal and return it for Carla's approval. Marking approved work
 handled records work Barbara already performed. Approval is distinct from completion.
 Opening a feedback editor, starting dictation, or cancelling it creates no handoff.
+Email approval requires a non-empty prepared proposal without a draft
+failure or queued/in-progress robot work. All approval controls and the save-time
+validator enforce this; manual tasks can still be approved without a proposal.
+An earlier triage failure does not block approval of a successfully prepared or
+returned proposal.
 Failed writes keep the user's draft visible. Each action re-reads the lot and rejects
 an outdated decision before writing.
 
@@ -88,7 +93,8 @@ npm run test:browser
 npm run build:site
 ```
 
-Release-artifact follow-up for the feedback-save lock and unsaved-proposal guard:
+Release-artifact follow-up for the feedback-save lock, unsaved-proposal guard,
+and email approval-readiness guard:
 this source/test patch leaves the committed static release unchanged. A local
 `npm run build` without production configuration checks compilation only; its
 output is not a publishable release. Before releasing these fixes, an authorized
