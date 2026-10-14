@@ -60,7 +60,7 @@ lot('approve', 1, 'approve presentation delivery');
 lot('feedback', 2, 'correct the schedule reply');
 lot('dictated', 3, 'dictate a presentation correction');
 lot('pending', 4, 'unreviewed private briefing');
-lot('legacy', 5, 'legacy feedback for barbara', { review: 'changes', feedback: 'Please use Tuesday.', slips: [{ at: timestamp, to: 'the robot', note: 'Please use Tuesday.' }] });
+lot('legacy', 5, 'existing delegation for barbara', { review: 'barbara', feedback: 'Please use Tuesday.', slips: [{ at: timestamp, to: 'barbara', note: 'Please use Tuesday.' }] });
 lot('finished', 6, 'already completed action', { review: 'approved', completed: true, completedAt: timestamp, closedAt: timestamp });
 lot('old-approval', 7, 'older approval still waiting', { review: 'approved', reviewedAt: '2020-01-01T12:00:00.000Z', closedAt: '2020-01-01T12:00:00.000Z' });
 lot('checkbox', 8, 'row checkbox decision');
@@ -193,7 +193,7 @@ try {
   await present(carla.getByRole('button', { name: 'approve presentation delivery', exact: true }));
   await present(barbara.getByRole('heading', { name: 'from carla' }));
   await present(barbara.getByRole('button', { name: /older approval still waiting/ }));
-  await present(barbara.getByRole('button', { name: /legacy feedback for barbara/ }));
+  await present(barbara.getByRole('button', { name: /existing delegation for barbara/ }));
   assert.equal(await barbara.getByText('unreviewed private briefing', { exact: true }).count(), 0);
   assert.equal(await barbara.getByText('already completed action', { exact: true }).count(), 0);
   assert.equal(await barbara.getByRole('button', { name: /approve presentation delivery/ }).count(), 0);
@@ -220,22 +220,24 @@ try {
 
   await carla.reload();
   await carla.getByRole('button', { name: /correct the schedule reply/ }).click();
-  await carla.getByRole('button', { name: 'give feedback to barbara', exact: true }).click();
+  await carla.getByRole('button', { name: 'hand back with instructions', exact: true }).click();
+  await carla.getByRole('button', { name: 'hand to barbara instead', exact: true }).click();
   await carla.getByRole('button', { name: 'written', exact: true }).click();
   const beforeCancel = commits.length;
-  await carla.getByRole('textbox', { name: 'feedback for barbara' }).fill('Cancel this unfinished feedback.');
+  await carla.getByRole('textbox', { name: 'instructions for barbara' }).fill('Cancel this unfinished feedback.');
   await carla.getByRole('button', { name: '← cancel', exact: true }).click();
-  await present(carla.getByRole('button', { name: 'give feedback to barbara', exact: true }));
+  await present(carla.getByRole('button', { name: 'hand back with instructions', exact: true }));
   assert.equal(commits.length, beforeCancel, 'cancelling feedback must not write');
-  await carla.getByRole('button', { name: 'give feedback to barbara', exact: true }).click();
+  await carla.getByRole('button', { name: 'hand back with instructions', exact: true }).click();
+  await carla.getByRole('button', { name: 'hand to barbara instead', exact: true }).click();
   await carla.getByRole('button', { name: 'written', exact: true }).click();
-  await carla.getByRole('textbox', { name: 'feedback for barbara' }).fill('Use Tuesday afternoon, not Monday.');
+  await carla.getByRole('textbox', { name: 'instructions for barbara' }).fill('Use Tuesday afternoon, not Monday.');
   const feedbackWrites = holdWrites('lots/feedback');
-  await carla.getByRole('button', { name: 'send feedback to barbara →', exact: true }).click();
+  await carla.getByRole('button', { name: 'hand to barbara →', exact: true }).click();
   const feedbackAttempt = await feedbackWrites.next();
   await present(carla.getByRole('button', { name: 'saving…', exact: true }));
   assert.equal(await carla.getByRole('button', { name: 'saving…', exact: true }).isDisabled(), true);
-  assert.equal(await carla.getByRole('textbox', { name: 'feedback for barbara' }).isDisabled(), true, 'feedback text must be locked during saving');
+  assert.equal(await carla.getByRole('textbox', { name: 'instructions for barbara' }).isDisabled(), true, 'feedback text must be locked during saving');
   for (const name of ['written', 'dictate', '← cancel']) {
     assert.equal(await carla.getByRole('button', { name, exact: true }).isDisabled(), true, `${name} must be locked during saving`);
   }
@@ -244,19 +246,19 @@ try {
   assert.equal(feedbackRetry.body.p_patch.feedback, 'Use Tuesday afternoon, not Monday.');
   assert.equal(feedbackRetry.body.p_patch.slips.at(-1).note, feedbackAttempt.body.p_patch.slips.at(-1).note);
   assert.equal(feedbackRetry.body.p_patch.slips.at(-1).mode, feedbackAttempt.body.p_patch.slips.at(-1).mode);
-  assert.equal(await carla.getByRole('textbox', { name: 'feedback for barbara' }).isDisabled(), true, 'quiet retry must keep the editor locked');
+  assert.equal(await carla.getByRole('textbox', { name: 'instructions for barbara' }).isDisabled(), true, 'quiet retry must keep the editor locked');
   feedbackRetry.release(false);
   await present(carla.getByText(/couldn’t confirm the save|not saved/i).first());
-  await carla.getByRole('button', { name: 'send feedback to barbara →', exact: true }).waitFor();
+  await carla.getByRole('button', { name: 'hand to barbara →', exact: true }).waitFor();
   assert.equal(docs.get('lots/feedback').review, 'pending');
   assert.equal(commits.length, beforeCancel);
-  assert.equal(await carla.getByRole('textbox', { name: 'feedback for barbara' }).inputValue(), 'Use Tuesday afternoon, not Monday.');
-  assert.equal(await carla.getByRole('textbox', { name: 'feedback for barbara' }).isDisabled(), false);
+  assert.equal(await carla.getByRole('textbox', { name: 'instructions for barbara' }).inputValue(), 'Use Tuesday afternoon, not Monday.');
+  assert.equal(await carla.getByRole('textbox', { name: 'instructions for barbara' }).isDisabled(), false);
   for (const name of ['written', 'dictate', '← cancel']) {
     assert.equal(await carla.getByRole('button', { name, exact: true }).isDisabled(), false);
   }
   assert.equal(await carla.getByRole('button', { name: 'written', exact: true }).getAttribute('aria-pressed'), 'true');
-  await carla.getByRole('button', { name: 'send feedback to barbara →', exact: true }).click();
+  await carla.getByRole('button', { name: 'hand to barbara →', exact: true }).click();
   (await feedbackWrites.next()).release(true);
   feedbackWrites.stop();
   await stored('feedback', (doc) => doc.review === 'barbara');
@@ -348,13 +350,14 @@ try {
 
   await carla.reload();
   await carla.getByRole('button', { name: /dictate a presentation correction/ }).click();
-  await carla.getByRole('button', { name: 'give feedback to barbara', exact: true }).click();
+  await carla.getByRole('button', { name: 'hand back with instructions', exact: true }).click();
+  await carla.getByRole('button', { name: 'hand to barbara instead', exact: true }).click();
   await carla.getByRole('button', { name: 'start dictation', exact: true }).click();
   await carla.evaluate(() => window.__dictateFixture('Please attach the revised presentation.'));
-  assert.equal(await carla.getByRole('button', { name: 'send feedback to barbara →', exact: true }).isDisabled(), true, 'dictation must stop before submitting');
+  assert.equal(await carla.getByRole('button', { name: 'hand to barbara →', exact: true }).isDisabled(), true, 'dictation must stop before submitting');
   await carla.getByRole('button', { name: 'stop', exact: true }).click();
   const dictatedWrites = holdWrites('lots/dictated');
-  await carla.getByRole('button', { name: 'send feedback to barbara →', exact: true }).click();
+  await carla.getByRole('button', { name: 'hand to barbara →', exact: true }).click();
   const dictatedAttempt = await dictatedWrites.next();
   await present(carla.getByRole('button', { name: 'saving…', exact: true }));
   for (const name of ['saving…', 'dictate more', 'written', 'dictate', '← cancel']) {
@@ -362,15 +365,15 @@ try {
   }
   dictatedAttempt.release(false);
   (await dictatedWrites.next()).release(false);
-  await present(carla.getByRole('button', { name: 'send feedback to barbara →', exact: true }));
+  await present(carla.getByRole('button', { name: 'hand to barbara →', exact: true }));
   await present(carla.getByText('Please attach the revised presentation.', { exact: true }));
   assert.equal(docs.get('lots/dictated').review, 'pending');
   assert.equal(commits.filter((commit) => commit.path === 'lots/dictated').length, 0);
   assert.equal(await carla.getByRole('button', { name: 'dictate', exact: true }).getAttribute('aria-pressed'), 'true');
-  for (const name of ['send feedback to barbara →', 'dictate more', 'written', 'dictate', '← cancel']) {
+  for (const name of ['hand to barbara →', 'dictate more', 'written', 'dictate', '← cancel']) {
     assert.equal(await carla.getByRole('button', { name, exact: true }).isDisabled(), false);
   }
-  await carla.getByRole('button', { name: 'send feedback to barbara →', exact: true }).click();
+  await carla.getByRole('button', { name: 'hand to barbara →', exact: true }).click();
   (await dictatedWrites.next()).release(true);
   dictatedWrites.stop();
   await stored('dictated', (doc) => doc.review === 'barbara');
@@ -385,17 +388,18 @@ try {
 
   const noVoiceCarla = await member('carla', { dictation: false });
   await noVoiceCarla.getByRole('button', { name: /written fallback instructions/ }).click();
-  await noVoiceCarla.getByRole('button', { name: 'give feedback to barbara', exact: true }).click();
+  await noVoiceCarla.getByRole('button', { name: 'hand back with instructions', exact: true }).click();
+  await noVoiceCarla.getByRole('button', { name: 'hand to barbara instead', exact: true }).click();
   assert.equal(await noVoiceCarla.getByRole('button', { name: 'start dictation', exact: true }).count(), 0);
-  await noVoiceCarla.getByRole('textbox', { name: 'feedback for barbara' }).fill('Written feedback without speech support.');
-  await noVoiceCarla.getByRole('button', { name: 'send feedback to barbara →', exact: true }).click();
+  await noVoiceCarla.getByRole('textbox', { name: 'instructions for barbara' }).fill('Written feedback without speech support.');
+  await noVoiceCarla.getByRole('button', { name: 'hand to barbara →', exact: true }).click();
   await stored('fallback', (doc) => doc.review === 'barbara');
   assert.equal(docs.get('lots/fallback').slips.at(-1).mode, 'written');
   await noVoiceCarla.context().close();
   console.log('PASS: missing browser speech support falls back to persisted written feedback');
 
   const beforeConcurrent = commits.length;
-  await barbara.getByRole('button', { name: /legacy feedback for barbara/ }).click();
+  await barbara.getByRole('button', { name: /existing delegation for barbara/ }).click();
   await barbara.getByRole('button', { name: 'edit proposal for carla', exact: true }).click();
   await barbara.getByRole('textbox', { name: 'proposal for carla to review' }).fill('Keep my unsaved local revision.');
   docs.get('lots/legacy').updatedAt = new Date(Date.now() + 2000).toISOString();
@@ -494,7 +498,7 @@ try {
       await carla.getByRole('button', { name: new RegExp(`unready ${position} ${name}`) }).click();
       assert.equal(await carla.getByRole('button', { name: 'approve for barbara', exact: true }).isDisabled(), true);
       if (name === 'missing draft') {
-        assert.equal(await carla.getByRole('button', { name: 'give feedback to barbara', exact: true }).isDisabled(), false);
+        assert.equal(await carla.getByRole('button', { name: 'hand back with instructions', exact: true }).isDisabled(), false);
         assert.equal(await carla.getByRole('button', { name: 'file without approving', exact: true }).isDisabled(), false);
         await present(carla.getByRole('button', { name: 'prepare the reply', exact: true }));
       }
@@ -552,6 +556,61 @@ try {
   assert.deepEqual(pageErrors, [], 'no unhandled browser errors');
   assert.equal(commits.length, beforeUnready + 5, 'only valid approvals, completions, and reopening should write');
   console.log('PASS: validator rechecks readiness; valid email and draftless manual approval/completion still work');
+
+  lot('robot-instructions', 950, 'make the reply more formal');
+  await carla.reload();
+  await carla.getByRole('button', { name: /make the reply more formal/ }).click();
+  await carla.getByRole('button', { name: 'hand back with instructions', exact: true }).click();
+  await present(carla.getByText('to the robot · change request', { exact: true }));
+  await carla.getByRole('button', { name: 'written', exact: true }).click();
+  const robotNote = carla.getByRole('textbox', { name: 'instructions for the robot' });
+  await robotNote.fill('Make this more formal, keep the price, and explain the delivery date.');
+  const beforeRobot = commits.length;
+  await carla.getByRole('button', { name: 'hand to barbara instead', exact: true }).click();
+  assert.equal(await carla.getByRole('textbox', { name: 'instructions for barbara' }).inputValue(), 'Make this more formal, keep the price, and explain the delivery date.');
+  await carla.getByRole('button', { name: 'ask the robot instead', exact: true }).click();
+  assert.equal(commits.length, beforeRobot, 'changing the recipient must not submit instructions');
+  const robotWrites = holdWrites('lots/robot-instructions');
+  await carla.getByRole('button', { name: 'send instructions to the robot →', exact: true }).click();
+  const robotAttempt = await robotWrites.next();
+  assert.equal(robotAttempt.body.p_patch.review, 'changes');
+  assert.equal(robotAttempt.body.p_patch.slips.at(-1).to, 'the robot');
+  assert.equal(await robotNote.isDisabled(), true);
+  assert.equal(await carla.getByRole('button', { name: 'hand to barbara instead', exact: true }).isDisabled(), true, 'recipient must be locked during saving');
+  robotAttempt.release(true);
+  await stored('robot-instructions', (doc) => doc.review === 'changes');
+  robotWrites.stop();
+  await present(carla.getByText('instructions saved · waiting for the robot', { exact: true }).first());
+  await barbara.reload();
+  await present(barbara.getByRole('heading', { name: 'from carla' }));
+  assert.equal(await barbara.getByRole('button', { name: /make the reply more formal/ }).count(), 0, 'robot instructions must never enter Barbara’s queue');
+  await carla.reload();
+  await present(carla.getByRole('checkbox', { name: 'make the reply more formal is with the robot', exact: true }));
+  assert.equal(await carla.getByRole('checkbox', { name: 'make the reply more formal is with the robot', exact: true }).isDisabled(), true);
+  assert.equal(commits.length, beforeRobot + 1, 'robot handback persists one change request');
+  assert.deepEqual(unexpected, [], 'all API usage must remain in the offline fixture contract');
+  assert.deepEqual(pageErrors, [], 'no unhandled browser errors');
+  console.log('PASS: free-form robot instructions are the default, recipient switches retain text, and robot work stays out of Barbara’s queue');
+
+  lot('other-person', 960, 'fernanda follows up on payment', {
+    triage: { category: 'Finance', actionRequired: true, actionFor: 'other', priority: 'High', owner: 'Fernanda Brito', nextAction: 'fernanda follows up on payment', summary: 'The captain will settle payment. Fernanda follows up.' },
+  });
+  lot('carla-decision', 961, 'carla approves the sample', {
+    triage: { category: 'Project / Work', actionRequired: true, actionFor: 'carla', priority: 'High', owner: 'Carla', nextAction: 'carla approves the sample', summary: 'Fernanda needs Carla’s approval before ordering.' },
+  });
+  const beforeFilter = commits.length;
+  await carla.reload();
+  await present(carla.getByRole('button', { name: /carla approves the sample/ }));
+  assert.equal(await carla.getByRole('button', { name: /fernanda follows up on payment/ }).count(), 0);
+  await carla.getByRole('button', { name: 'show other mail', exact: true }).click();
+  await present(carla.getByRole('button', { name: /fernanda follows up on payment/ }));
+  await carla.getByRole('button', { name: 'back to carla’s actions', exact: true }).click();
+  assert.equal(await carla.getByRole('button', { name: /fernanda follows up on payment/ }).count(), 0);
+  assert.equal(docs.get('lots/other-person').review, 'pending', 'filtering must not archive or complete someone else’s email');
+  assert.equal(commits.length, beforeFilter, 'responsibility filtering is read-only');
+  assert.deepEqual(unexpected, []);
+  assert.deepEqual(pageErrors, []);
+  console.log('PASS: finance assigned to Fernanda stays out of Carla’s briefing and remains accessible through other mail');
   console.log(`PASS: ${commits.length} expected writes, no real backend/Gmail traffic, no browser errors`);
 } finally {
   await browser?.close();

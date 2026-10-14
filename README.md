@@ -15,8 +15,9 @@ None, comando `node scripts/stage-static.mjs`, saída `dist` e
 na fonte exigem executar `npm run build:site` e incluir os bundles atualizados.
 
 Formulary gives Carla a short email briefing and a prepared response or next action.
-She reviews it, files irrelevant work, approves it, or gives quick feedback. Barbara
-receives the resulting handoffs and corrections in her own queue.
+She reviews it, files irrelevant work, approves it, or gives free-form instructions
+to the robot by text or dictation. Barbara receives approvals and explicit
+delegations in her own queue; robot change requests stay with the robot.
 
 ## The first workflow fix
 
@@ -27,11 +28,14 @@ Barbara's authenticated device opens **From Carla** with only these incomplete l
 | --- | --- |
 | `review: approved`, `completed: false` | Carla's approval and the full prepared proposal |
 | `review: barbara`, `completed: false` | Carla's saved instructions or dictation transcript |
-| `review: changes`, `completed: false` | Older feedback already sent through the previous robot workflow |
+| `review: changes`, `completed: false` | Nothing: this is the robot's revision queue |
 
 Barbara can edit a proposal and return it for Carla's approval. Marking approved work
 handled records work Barbara already performed. Approval is distinct from completion.
 Opening a feedback editor, starting dictation, or cancelling it creates no handoff.
+New instructions default to the robot. Switching to **Hand to Barbara instead**
+only selects a recipient; submitting saves the instructions. A robot request
+returns through the existing revision engine for Carla's approval.
 Email approval requires a non-empty prepared proposal without a draft
 failure or queued/in-progress robot work. All approval controls and the save-time
 validator enforce this; manual tasks can still be approved without a proposal.
@@ -46,19 +50,27 @@ Older `formulary.role` and `formulary.review` browser data are ignored, not dele
 Malformed placeholder feedback from the former wrapper cannot be recovered as real
 instructions; actual approvals and feedback in `lots/*` are used directly.
 
-Barbara's three subscriptions are independent of Carla's 200-lot archive, with a
+Barbara's two subscriptions are independent of Carla's 200-lot archive, with a
 1,000-item limit per status. The existing Supabase adapter refreshes after Realtime
 events, when the phone becomes visible, and every minute. The queue refresh button
 only reloads handoffs; it does not trigger the email robot.
 
 ## Current boundaries
 
-- Gmail is read-only. This frontend does not send messages or attachments. Barbara
-  opens the original Gmail thread to act, then records completion here.
+- The current Gmail integration is read-only. Opening the original thread does
+  not create a reply in Gmail. Preparing an actual Gmail reply with attachments
+  remains required work on the server integration, not a completed capability.
 - Speech input is browser dictation. Its transcript and input mode are saved on the
   shared lot; no playable audio recording is currently stored.
-- Workspace document search, attachment preparation, and automated sending are
-  separate future work. Classification and robot prompts are unchanged in this fix.
+- File uploads and workspace document search are not implemented. Feedback-file
+  types in the source do not provide storage, extraction, or robot consumption.
+- The briefing must filter by Carla's responsibility, not just a work category.
+  Other people's pending actions stay accessible in the all-mail view. Existing
+  explicit human decisions and history are preserved. Matching changes to any
+  separately deployed triage worker are still required before release.
+  New triage records use `actionFor` to distinguish Carla, another person, no
+  action, or uncertainty. Older records with an action but no `actionFor` need
+  reclassification; a person's name alone is not used to hide a possible task.
 - UI and action guards enforce the two experiences in the app. Existing backend
   membership/RLS remains unchanged; this is not a server-side authorization migration
   or an atomic compare-and-swap upgrade to `doc_merge`.

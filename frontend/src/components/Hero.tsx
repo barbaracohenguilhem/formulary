@@ -20,7 +20,8 @@ export function Hero({
   onDone: () => void;
 }) {
   const [lead, tail] = rowMeta(task, now);
-  const awaitingBarbara = !!task.prepared && !task.prepared.completed && ['barbara', 'changes'].includes(task.prepared.review);
+  const awaitingBarbara = !!task.prepared && !task.prepared.completed && task.prepared.review === 'barbara';
+  const awaitingRobot = !!task.prepared && !task.prepared.completed && task.prepared.review === 'changes';
   const queued = task.prepared?.robot?.state === 'queued';
   const unready = !task.done && !canApprove(task);
   return (
@@ -36,8 +37,8 @@ export function Hero({
         <b>{lead}</b>
         {lead ? tail : tail.replace(/^ · /, '')}
       </div>
-      <button type="button" className={s.heroDone} disabled={saving || awaitingBarbara || queued || unready} onClick={onDone}>
-        {saving ? 'saving…' : queued ? 'reply queued' : awaitingBarbara ? 'with barbara' : unready ? 'proposal not ready' : task.prepared ? 'approve for barbara' : 'mark as done'}
+      <button type="button" className={s.heroDone} disabled={saving || awaitingBarbara || awaitingRobot || queued || unready} onClick={onDone}>
+        {saving ? 'saving…' : awaitingRobot ? 'with the robot' : queued ? 'reply queued' : awaitingBarbara ? 'with barbara' : unready ? 'proposal not ready' : task.prepared ? 'approve for barbara' : 'mark as done'}
       </button>
     </section>
   );

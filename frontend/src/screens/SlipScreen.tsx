@@ -48,11 +48,12 @@ export function SlipScreen({
   const ready = !saving && (inbox ? hasNote && !recording : voice ? hasAudio : hasNote);
   const live = recording || hasAudio;
 
-  const recipient = inbox ? 'to barbara' : `to ${STUDIO}`;
+  const toBarbara = slip.recipient === 'barbara';
+  const recipient = inbox ? toBarbara ? 'to barbara' : 'to the robot · change request' : `to ${STUDIO}`;
   const primary = saving
     ? 'saving…'
     : inbox
-      ? 'send feedback to barbara →'
+      ? toBarbara ? 'hand to barbara →' : 'send instructions to the robot →'
       : `hand to ${STUDIO} →`;
   const recordLabel = recording
     ? 'stop'
@@ -105,7 +106,7 @@ export function SlipScreen({
             <div className={s.timer}>{timerLabel(slip.secs)}</div>
             {inbox && (
               <div className={[s.transcript, hasNote ? '' : s.transcriptHint].join(' ')}>
-                {hasNote ? slip.note : recording ? 'listening…' : 'Speak your feedback. Barbara receives the transcript.'}
+                {hasNote ? slip.note : recording ? 'listening…' : `Speak your instructions. ${toBarbara ? 'Barbara' : 'The robot'} receives the transcript.`}
               </div>
             )}
             <button
@@ -120,7 +121,7 @@ export function SlipScreen({
         ) : (
           <textarea
             id="slip-note"
-            aria-label={inbox ? 'feedback for barbara' : 'instructions'}
+            aria-label={inbox ? `instructions for ${toBarbara ? 'barbara' : 'the robot'}` : 'instructions'}
             className={s.textarea}
             placeholder={inbox ? PLACEHOLDER_INBOX : PLACEHOLDER_STUDIO}
             value={slip.note}
@@ -150,6 +151,11 @@ export function SlipScreen({
       <Button variant="solid" className={b.handOff} disabled={!ready} onClick={onHand}>
         {primary}
       </Button>
+      {inbox && (
+        <Button variant="quiet" disabled={saving || recording} onClick={() => onPatch({ recipient: toBarbara ? 'robot' : 'barbara' })}>
+          {toBarbara ? 'ask the robot instead' : 'hand to barbara instead'}
+        </Button>
+      )}
     </Screen>
   );
 }

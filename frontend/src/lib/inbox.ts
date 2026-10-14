@@ -6,6 +6,7 @@
  */
 import type { Bucket, Prepared, Ref, ReviewState, Slip, Task } from '../types';
 import { clock, dayLabel, shortStamp, stamp, startOfDay } from './format';
+import { gmailLink } from './gmailLink';
 
 export const CATEGORIES = [
   'Action required',
@@ -20,7 +21,7 @@ export const CATEGORIES = [
   'Spam / Promotion',
 ] as const;
 
-/** The categories that are work. The rest — newsletters, notifications, spam — is mail. */
+/** Relevant studio correspondence for retention, not proof that Carla must act. */
 export const CURATED = new Set<string>(CATEGORIES.slice(0, 7));
 
 export const PRIORITIES = ['High', 'Medium', 'Low', 'No priority'] as const;
@@ -33,9 +34,17 @@ export const COMPOSE_CONTEXTS: { chip: string; category: string }[] = [
   { chip: 'personal', category: 'Personal' },
 ];
 
+export type ActionFor = 'carla' | 'other' | 'none' | 'unclear';
+
+export const readActionFor = (value: unknown): ActionFor | undefined =>
+  value === 'carla' || value === 'other' || value === 'none' || value === 'unclear' ? value : undefined;
+
 export type Triage = {
   category: string;
+  /** A next action for Carla, not merely work somewhere in the studio. */
   actionRequired: boolean;
+  /** Optional for compatibility with lots produced by the older robot. */
+  actionFor?: ActionFor;
   priority: string; // one of PRIORITIES
   nextAction: string;
   summary: string;
@@ -45,6 +54,16 @@ export type Triage = {
   dueAt?: string; // local "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM"
   dueHasTime?: boolean;
 };
+
+/**
+ * Only structured responsibility can exclude an otherwise actionable lot.
+ * Legacy owner text may name a person, company or team: preserve its existing
+ * actionRequired decision until the robot can reclassify the thread. Never infer
+ * responsibility from names, sender, recipients or the body at display time.
+ */
+export function needsCarlaAction(triage: Pick<Triage, 'actionRequired' | 'actionFor'> | null | undefined): boolean {
+  return !!triage?.actionRequired && triage.actionFor !== 'other' && triage.actionFor !== 'none';
+}
 
 export type DraftDoc = {
   nextAction?: string;
@@ -114,7 +133,7 @@ export type LotDoc = {
   autoFiled?: boolean;
   /** Denormalised so the store can be queried: not approved and not completed. */
   open: boolean;
-  /** Work, not mail — what the index shows unless she asks for everything. False until the robot has read it. */
+  /** Relevant studio correspondence, retained even when another person must act. */
   work: boolean;
   /** The robot has triaged it. Unread lots wait for her tap on the tally. */
   read: boolean;
@@ -200,6 +219,7 @@ export function readLot(data: Record<string, unknown> | undefined): LotDoc | nul
       ? {
           category: str(t.category, 60),
           actionRequired: bool(t.actionRequired),
+          actionFor: readActionFor(t.actionFor),
           priority: str(t.priority, 20),
           nextAction: str(t.nextAction, 300),
           summary: str(t.summary, 1200),
@@ -233,7 +253,7 @@ export function readLot(data: Record<string, unknown> | undefined): LotDoc | nul
     // the flags are recomputed from the fields they summarise, so a stale flag never misfiles a lot here
     ...flagsOf({
       kind,
-      triage: t ? ({ actionRequired: bool(t.actionRequired), category: str(t.category, 60) } as Triage) : null,
+      triage: t ? ({ actionRequired: bool(t.actionRequired), actionFor: readActionFor(t.actionFor), owner: str(t.owner, 200) || undefined, category: str(t.category, 60) } as Triage) : null,
       review,
       completed,
       slips: Array.isArray(data.slips) ? (data.slips as SlipEntry[]) : undefined,
@@ -274,8 +294,9 @@ export function bucketOf(p: Pick<Prepared, 'dueAt' | 'priority'>, done: boolean,
   return 'upcoming';
 }
 
-/** Work, not mail: what the index shows unless she asks for everything. */
-export const isCurated = (d: LotDoc) => d.work || !d.open;
+/** Preserve human decisions and history; a category alone never creates a task. */
+export const isCurated = (d: LotDoc) => !d.open || d.kind === 'manual' ||
+  d.review !== 'pending' || !!d.slips?.length || d.draft?.basis === 'revision' || needsCarlaAction(d.triage);
 
 const CATEGORY_SHORT: Record<string, string> = {
   'Project / Work': 'project',
@@ -292,6 +313,7 @@ const PRIORITY_UI: Record<string, Prepared['priority']> = { High: 'high', Medium
 export function toTask(id: string, d: LotDoc, now = new Date()): Task {
   const t = d.triage;
   const p = d.draft;
+  const gmail = gmailLink(d);
   const next = p?.nextAction || t?.nextAction || '';
   // mail that asks nothing is titled by what it is, not by "no action required."
   const idle = /^no action (is )?required\.?$/i.test(next.trim());
@@ -322,12 +344,12 @@ export function toTask(id: string, d: LotDoc, now = new Date()): Task {
     dueHasTime,
     category,
     attachments: !!d.attachments,
-    gmail: d.gmail,
+    gmail,
     read: !!t,
     readied: !!p,
     robot: d.robot ?? undefined,
     manual: d.kind === 'manual',
-    actionRequired: d.kind === 'manual' || !!t?.actionRequired || CURATED.has(category),
+    actionRequired: d.kind === 'manual' || d.review !== 'pending' || !!d.slips?.length || p?.basis === 'revision' || needsCarlaAction(t),
     risk: d.risk || undefined,
     draftFail: d.draftFail?.text || (d.draftFail ? 'the robot couldn’t prepare this' : undefined),
     unread: !!d.triageFail,
@@ -341,7 +363,7 @@ export function toTask(id: string, d: LotDoc, now = new Date()): Task {
     kind: 'email' as const,
     id: d.threadId || id,
     label: `mail · ${d.subject || '(no subject)'}`,
-    url: d.gmail,
+    url: gmail,
     at: prepared.receivedAt,
   };
   const refs: Ref[] = [];
@@ -394,7 +416,7 @@ export function toTask(id: string, d: LotDoc, now = new Date()): Task {
     created: stamp(received),
     notes: p?.summary || t?.summary || d.snippet || '',
     refs,
-    action: d.gmail ? { kind: 'open', cta: 'open in gmail', target: d.gmail, note: 'opened' } : undefined,
+    action: gmail ? { kind: 'open', cta: 'open in gmail', target: gmail, note: 'opened' } : undefined,
     slip,
     prepared,
   };

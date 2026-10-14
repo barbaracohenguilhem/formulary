@@ -102,31 +102,48 @@ test('Carla approval is work for Barbara, not proof the action has been complete
   assert.equal(original.review, 'pending', 'transition must not mutate its input');
 });
 
-test('Barbara queue includes approvals, feedback, and legacy robot feedback but no pending or finished lots', () => {
-  for (const review of ['approved', 'barbara', 'changes'] as const) {
+test('Barbara queue includes approvals and explicit delegation, never robot changes', () => {
+  for (const review of ['approved', 'barbara'] as const) {
     assert.equal(isBarbaraPending(task(lot({ review }))), true, review);
     assert.equal(isBarbaraPending(task(lot({ review, completed: true }))), false, `completed ${review}`);
   }
+  assert.equal(isBarbaraPending(task(lot({ review: 'changes' }))), false);
   assert.equal(isBarbaraPending(task(lot())), false);
   assert.equal(isBarbaraPending({ ...task(lot()), prepared: undefined }), false, 'seed tasks are not a real Barbara queue');
 });
 
-for (const mode of ['written', 'voice'] as const) {
-  test(`${mode} feedback survives the real persistence decoder and task adapter`, () => {
-    const next = apply(lot(), 'carla', { kind: 'feedback', note: '  Use the updated presentation from Tuesday.  ', mode, secs: mode === 'voice' ? 8 : undefined });
-    assert.equal(next.review, 'barbara');
+for (const recipient of ['robot', 'barbara'] as const) {
+ for (const mode of ['written', 'voice'] as const) {
+  test(`${mode} instructions for ${recipient} survive persistence without changing recipient`, () => {
+    const next = apply(lot(), 'carla', { kind: 'feedback', recipient, note: '  Use the updated presentation from Tuesday.  ', mode, secs: mode === 'voice' ? 8 : undefined });
+    assert.equal(next.review, recipient === 'robot' ? 'changes' : 'barbara');
     assert.equal(next.completed, false);
     assert.equal(next.open, true);
     assert.equal(next.feedback, 'Use the updated presentation from Tuesday.');
     assert.equal(next.slips?.at(-1)?.note, next.feedback);
-    assert.equal(next.slips?.at(-1)?.to, 'barbara');
+    assert.equal(next.slips?.at(-1)?.to, recipient === 'robot' ? 'the robot' : 'barbara');
     assert.equal(task(next).slip?.note, next.feedback);
     assert.equal(task(next).slip?.mode, mode);
-    assert.equal(task(next).slip?.to, 'barbara');
-    assert.equal(isBarbaraPending(task(next)), true);
+    assert.equal(task(next).slip?.to, recipient === 'robot' ? 'the robot' : 'barbara');
+    assert.equal(isBarbaraPending(task(next)), recipient === 'barbara');
+    assert.equal(canApprove(task(next)), false, 'instructions need a revised proposal before approval');
     if (mode === 'voice') assert.equal(task(next).slip?.secs, 8);
   });
+ }
 }
+
+test('instructions default to the robot and cannot be taken over by Barbara without delegation', () => {
+  const waiting = apply(lot(), 'carla', { kind: 'feedback', note: 'Make the answer clearer.', mode: 'written' });
+  assert.equal(waiting.review, 'changes');
+  assert.equal(waiting.slips?.at(-1)?.to, 'the robot');
+  assert.equal(isBarbaraPending(task(waiting)), false);
+  rejectsCode(() => reviewPatch(waiting, 'barbara', { kind: 'return', proposal: 'A different reply.' }, NOW), 'review_conflict');
+  const delegated = apply(waiting, 'carla', { kind: 'feedback', recipient: 'barbara', note: 'Please handle this yourself.', mode: 'written' });
+  assert.equal(delegated.review, 'barbara');
+  assert.equal(isBarbaraPending(task(delegated)), true);
+  const returned = apply(delegated, 'barbara', { kind: 'return', proposal: 'The corrected reply.' });
+  assert.equal(canApprove(task(returned)), true);
+});
 
 test('new feedback appends to the existing trail instead of replacing it', () => {
   const first = apply(lot(), 'carla', { kind: 'feedback', note: 'First correction.', mode: 'written' });
@@ -135,7 +152,7 @@ test('new feedback appends to the existing trail instead of replacing it', () =>
 });
 
 test('a correction returned by Barbara goes back to Carla with its context and revision trail', () => {
-  const waiting = apply(lot(), 'carla', { kind: 'feedback', note: 'Use the updated presentation.', mode: 'written' });
+  const waiting = apply(lot(), 'carla', { kind: 'feedback', recipient: 'barbara', note: 'Use the updated presentation.', mode: 'written' });
   const corrected = apply(waiting, 'barbara', { kind: 'return', proposal: '  Here is the updated presentation from Tuesday.  ' });
   assert.equal(corrected.review, 'pending');
   assert.equal(corrected.completed, false);

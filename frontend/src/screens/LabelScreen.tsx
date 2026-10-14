@@ -33,7 +33,7 @@ const EMPTY_SUMMARY = 'no summary recorded for this lot.';
 const STATUS = {
   pending: 'to review',
   approved: 'approved · with barbara to carry out',
-  changes: 'changes requested',
+  changes: 'changes requested · with the robot',
   barbara: 'with barbara',
 } as const;
 
@@ -124,7 +124,7 @@ export function LabelScreen({
   const leaveDialog = useRef<HTMLDialogElement>(null);
   const proposalEditor = useRef<HTMLTextAreaElement>(null);
   const busyHere = !!robot && robot.on === task.id;
-  const revising = busyHere && robot!.phase === 'revising';
+  const revising = (busyHere && robot!.phase === 'revising') || p?.robot?.state === 'revising';
   const queued = p?.robot?.state === 'queued';
   const locked = saving || returning || canWrite === false || queued;
   const busyElse = !!robot && robot.phase !== 'idle' && !busyHere;
@@ -153,7 +153,7 @@ export function LabelScreen({
       ? revising
         ? 'the robot is revising…'
         : robot?.able
-          ? robot.routine ? 'queued · the robot answers within the hour' : 'queued · the robot answers on your next ↻'
+          ? robot.routine ? 'instructions saved · waiting for the robot' : 'instructions saved · retry with ↻ if needed'
           : 'waiting · the robot runs on the mailbox owner’s view'
       : undefined;
 
@@ -180,7 +180,8 @@ export function LabelScreen({
 
   const approvedAwaiting = !!p && p.review === 'approved' && !p.completed;
   const delegatedManual = !!p && p.review === 'barbara' && p.manual && !p.completed;
-  const awaitingBarbara = !!p && !p.completed && (p.review === 'barbara' || p.review === 'changes');
+  const awaitingBarbara = !!p && !p.completed && p.review === 'barbara';
+  const awaitingRobot = !!p && !p.completed && p.review === 'changes';
   const feedback = p?.feedback || task.slip?.note;
   const dictated = p?.feedbackMode === 'voice' || task.slip?.mode === 'voice';
   const actionable = isBarbaraPending(task);
@@ -294,21 +295,22 @@ export function LabelScreen({
           </>
         ) : (
           <>
-            {!awaitingBarbara && (
+            {!awaitingBarbara && !awaitingRobot && (
               <Button variant="outline" disabled={locked || (!task.done && !canApprove(task))} onClick={onToggleDone}>
                 {saving ? 'saving…' : task.done ? 'reopen lot' : p ? 'approve for barbara' : 'mark as done'}
               </Button>
             )}
-            {!task.done && !awaitingBarbara && !canApprove(task) && (
+            {!task.done && !awaitingBarbara && !awaitingRobot && !canApprove(task) && (
               <p className={reviewStyles.help} role="status">The proposal is not ready. Wait for preparation to finish or prepare it again before approving for Barbara.</p>
             )}
             {awaitingBarbara && <p className={reviewStyles.help}>Your instructions are with Barbara.</p>}
+            {awaitingRobot && <p className={reviewStyles.help}>Your instructions are with the robot. Its revised proposal returns here for your approval.</p>}
             {!task.done && (
               <Button variant="outline" disabled={locked || revising} onClick={onHandBack}>
-                {task.slip && task.slip.status === 'sent' ? 'edit feedback for barbara' : p ? 'give feedback to barbara' : 'hand back with instructions'}
+                {task.slip && task.slip.status === 'sent' ? 'edit instructions' : 'hand back with instructions'}
               </Button>
             )}
-            {!task.done && !awaitingBarbara && (
+            {!task.done && !awaitingBarbara && !awaitingRobot && (
               <Button variant="quiet" disabled={locked} onClick={onDiscard}>
                 {p ? 'file without approving' : 'discard lot'}
               </Button>
