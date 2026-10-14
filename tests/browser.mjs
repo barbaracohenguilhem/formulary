@@ -591,7 +591,7 @@ try {
   assert.equal(creationAttempt.body.doc.subject, 'Prepare the project checklist');
   assert.equal(creationAttempt.body.doc.triage.category, 'Client / Sales');
   assert.equal(await composeTitle.isDisabled(), true, 'title must be locked until creation settles');
-  for (const name of ['project', 'client', 'finance', 'personal', 'today', 'tomorrow', 'this week', 'someday', '← cancel', 'printing…']) {
+  for (const name of ['project', 'client', 'finance', 'personal', 'today', 'tomorrow', 'this week', 'someday', 'cancel', 'printing…']) {
     const button = carla.getByRole('button', { name, exact: true });
     assert.equal(await button.isDisabled(), true, `${name} must be locked during creation`);
     await button.evaluate((element) => element.click());
@@ -603,7 +603,7 @@ try {
   assert.equal(await composeTitle.inputValue(), 'Prepare the project checklist', 'failed creation must retain the draft');
   assert.equal(await carla.getByRole('button', { name: 'client', exact: true }).getAttribute('aria-pressed'), 'true');
   assert.equal(await carla.getByRole('button', { name: 'tomorrow', exact: true }).getAttribute('aria-pressed'), 'true');
-  assert.equal(await carla.getByRole('button', { name: '← cancel', exact: true }).isDisabled(), false);
+  assert.equal(await carla.getByRole('button', { name: 'cancel', exact: true }).isDisabled(), false);
   assert.equal(apiCalls.filter((call) => call.path === '/rest/v1/rpc/acquire_lease').length, leasesBefore + 1, 'rapid submissions must reserve only one lot');
   assert.equal(created.length, 0);
   await capture(carla, '09-manual-task-failed');
@@ -624,7 +624,7 @@ try {
   await carla.getByRole('button', { name: 'new +', exact: true }).click();
   assert.equal(await composeTitle.inputValue(), '', 'successful creation must reset the next draft');
   await composeTitle.fill('A separate unsaved task');
-  await carla.getByRole('button', { name: '← cancel', exact: true }).click();
+  await carla.getByRole('button', { name: 'cancel', exact: true }).click();
   await present(carla.getByRole('button', { name: 'new +', exact: true }));
   assert.equal(created.length, 1, 'cancel after saving must not create another task');
   assert.deepEqual(unexpected, [], 'all API usage must remain in the offline fixture contract');
