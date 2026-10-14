@@ -18,15 +18,17 @@ export function LotBar({
   onBack,
   id,
   arrow = true,
+  backDisabled = false,
 }: {
   back: string;
   onBack: () => void;
   id: number;
   arrow?: boolean;
+  backDisabled?: boolean;
 }) {
   return (
     <div className={s.lotbar}>
-      <button className={s.back} onClick={onBack}>
+      <button className={s.back} onClick={onBack} disabled={backDisabled}>
         {arrow ? `← ${back}` : back}
       </button>
       <span className={s.lot}>lot {lotNumber(id)}</span>

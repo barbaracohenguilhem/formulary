@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Screen, LotBar } from '../components/Screen';
 import reviewStyles from './ReviewDetail.module.css';
 import {
@@ -116,14 +116,37 @@ export function LabelScreen({
   const barbara = who === 'barbara';
   const [editing, setEditing] = useState(false);
   const [proposalDraft, setProposalDraft] = useState('');
+  const [initialProposal, setInitialProposal] = useState('');
   const [proposalVersion, setProposalVersion] = useState<string | undefined>();
   const [returning, setReturning] = useState(false);
   const [returnError, setReturnError] = useState('');
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const leaveDialog = useRef<HTMLDialogElement>(null);
+  const proposalEditor = useRef<HTMLTextAreaElement>(null);
   const busyHere = !!robot && robot.on === task.id;
   const revising = busyHere && robot!.phase === 'revising';
   const queued = p?.robot?.state === 'queued';
   const locked = saving || returning || canWrite === false || queued;
   const busyElse = !!robot && robot.phase !== 'idle' && !busyHere;
+
+  useEffect(() => {
+    const dialog = leaveDialog.current;
+    if (!confirmLeave || !dialog) return;
+    dialog.showModal();
+    return () => dialog.close();
+  }, [confirmLeave]);
+
+  const keepEditing = () => {
+    leaveDialog.current?.close();
+    setConfirmLeave(false);
+    proposalEditor.current?.focus();
+  };
+
+  const back = () => {
+    if (saving || returning) return;
+    if (editing && proposalDraft !== initialProposal) setConfirmLeave(true);
+    else onBack();
+  };
 
   const slipFoot =
     task.slip && task.slip.to === 'the robot' && task.slip.status === 'sent'
@@ -186,7 +209,7 @@ export function LabelScreen({
   };
 
   return (
-    <Screen head={<LotBar back={barbara ? 'handoffs' : 'index'} onBack={onBack} id={task.lot} />}>
+    <Screen head={<LotBar back={barbara ? 'handoffs' : 'index'} onBack={back} backDisabled={saving || returning} id={task.lot} />}>
       <LabelFrame>
         <LabelCap>
           formulary
@@ -217,6 +240,7 @@ export function LabelScreen({
           <p className={reviewStyles.help}>Update the reply or action below. Carla will review this version before it is carried out.</p>
           {editConflict && <p className={reviewStyles.help} role="alert">{editConflict}</p>}
           <textarea
+            ref={proposalEditor}
             className={reviewStyles.textarea}
             id="revised-proposal"
             value={proposalDraft}
@@ -251,6 +275,7 @@ export function LabelScreen({
             {actionable && !editing && onReturnProposal && (
               <Button variant="outline" disabled={locked} onClick={() => {
                 setProposalDraft(p?.proposal || '');
+                setInitialProposal(p?.proposal || '');
                 setProposalVersion(p?.updatedAt);
                 setReturnError('');
                 setEditing(true);
@@ -288,6 +313,22 @@ export function LabelScreen({
           </>
         )}
       </div>
+      {confirmLeave && (
+        <dialog
+          ref={leaveDialog}
+          className={reviewStyles.leaveDialog}
+          aria-labelledby="leave-proposal-title"
+          aria-describedby="leave-proposal-description"
+          onCancel={(event) => { event.preventDefault(); keepEditing(); }}
+        >
+          <h2 className={reviewStyles.editLabel} id="leave-proposal-title">Discard unsaved proposal?</h2>
+          <p className={reviewStyles.help} id="leave-proposal-description">Your changes have not been saved. Discard them and return to handoffs?</p>
+          <div className={b.stack}>
+            <Button variant="solid" onClick={keepEditing}>Keep editing</Button>
+            <Button variant="quiet" onClick={onBack}>Discard changes</Button>
+          </div>
+        </dialog>
+      )}
     </Screen>
   );
 }
