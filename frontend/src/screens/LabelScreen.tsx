@@ -20,7 +20,7 @@ import type { Task } from '../types';
 import type { Robot } from '../store/model';
 import { OWNER } from '../data/seed';
 import { clock, dayLabel, estLabel, stamp, whenOf } from '../lib/format';
-import { isBarbaraPending } from '../lib/review';
+import { canApprove, isBarbaraPending } from '../lib/review';
 
 /**
  * On the seed, actions are simulated (§3): the tap is logged and the receipt line
@@ -295,9 +295,12 @@ export function LabelScreen({
         ) : (
           <>
             {!awaitingBarbara && (
-              <Button variant="outline" disabled={locked} onClick={onToggleDone}>
+              <Button variant="outline" disabled={locked || (!task.done && !canApprove(task))} onClick={onToggleDone}>
                 {saving ? 'saving…' : task.done ? 'reopen lot' : p ? 'approve for barbara' : 'mark as done'}
               </Button>
+            )}
+            {!task.done && !awaitingBarbara && !canApprove(task) && (
+              <p className={reviewStyles.help} role="status">The proposal is not ready. Wait for preparation to finish or prepare it again before approving for Barbara.</p>
             )}
             {awaitingBarbara && <p className={reviewStyles.help}>Your instructions are with Barbara.</p>}
             {!task.done && (

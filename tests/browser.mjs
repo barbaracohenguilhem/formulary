@@ -466,6 +466,92 @@ try {
   assert.equal(apiCalls.some((call) => call.who === 'barbara' && call.path.startsWith('/functions/v1/')), false, 'Barbara must not run or depend on the robot');
   assert.equal(commits.filter((commit) => commit.who === 'carla').length, 6);
   assert.equal(commits.filter((commit) => commit.who === 'barbara').length, 2);
+  const unreadyStates = [
+    ['missing draft', { draft: null }],
+    ['missing proposal', { draft: { at: timestamp, basis: 'thread' } }],
+    ['empty proposal', { draft: { proposal: '', at: timestamp, basis: 'thread' } }],
+    ['whitespace proposal', { draft: { proposal: ' \n ', at: timestamp, basis: 'thread' } }],
+    ['failed draft', { draftFail: { code: 'unavailable', at: timestamp } }],
+    ['failed triage', { triageFail: { code: 'unavailable', at: timestamp } }],
+    ...['queued', 'preparing', 'revising', 'failed'].map((state) => [`robot ${state}`, { robot: { state, at: timestamp } }]),
+  ];
+  const beforeUnready = commits.length;
+  await barbara.reload();
+  await present(barbara.getByRole('heading', { name: 'from carla' }));
+  for (const [name, patch] of unreadyStates) {
+    lot('unready-hero', 1, `unready hero ${name}`, patch);
+    lot('unready-row', 910, `unready row ${name}`, patch);
+    await carla.reload();
+    const hero = carla.locator('section').filter({ has: carla.getByRole('button', { name: `unready hero ${name}`, exact: true }) });
+    const quickApproval = hero.getByRole('button', { name: name === 'robot queued' ? 'reply queued' : 'proposal not ready', exact: true });
+    await present(quickApproval);
+    assert.equal(await quickApproval.isDisabled(), true);
+    await quickApproval.evaluate((button) => button.click());
+    const rowApproval = carla.getByRole('checkbox', { name: `unready row ${name} ${name === 'robot queued' ? 'reply queued' : 'proposal not ready'}`, exact: true });
+    assert.equal(await rowApproval.isDisabled(), true);
+    await rowApproval.evaluate((button) => button.click());
+    for (const position of ['hero', 'row']) {
+      await carla.getByRole('button', { name: new RegExp(`unready ${position} ${name}`) }).click();
+      assert.equal(await carla.getByRole('button', { name: 'approve for barbara', exact: true }).isDisabled(), true);
+      if (name === 'missing draft') {
+        assert.equal(await carla.getByRole('button', { name: 'give feedback to barbara', exact: true }).isDisabled(), false);
+        assert.equal(await carla.getByRole('button', { name: 'file without approving', exact: true }).isDisabled(), false);
+        await present(carla.getByRole('button', { name: 'prepare the reply', exact: true }));
+      }
+      await carla.getByRole('button', { name: '← index', exact: true }).click();
+    }
+    await refresh(barbara);
+    assert.equal(await barbara.getByRole('button', { name: new RegExp(`unready (hero|row) ${name}`) }).count(), 0);
+    for (const id of ['unready-hero', 'unready-row']) {
+      assert.equal(docs.get(`lots/${id}`).open, true);
+      assert.equal(docs.get(`lots/${id}`).review, 'pending');
+      assert.equal(docs.get(`lots/${id}`).completed, false);
+      docs.delete(`lots/${id}`);
+    }
+  }
+  assert.equal(commits.length, beforeUnready, 'unready approval controls must never create a handoff');
+  console.log('PASS: missing/empty/failed and queued/preparing/revising proposals cannot be approved from hero, row, or detail');
+
+  lot('readiness-reread', 920, 'proposal readiness reread');
+  await carla.reload();
+  await carla.getByRole('button', { name: /proposal readiness reread/ }).click();
+  docs.get('lots/readiness-reread').draft = null;
+  await carla.getByRole('button', { name: 'approve for barbara', exact: true }).click();
+  await present(carla.getByText('this proposal is not ready · prepare it before approving for barbara', { exact: true }));
+  assert.equal(commits.length, beforeUnready, 'fresh-read readiness must reject an approval even without a version change');
+  assert.equal(docs.get('lots/readiness-reread').open, true);
+  assert.equal(docs.get('lots/readiness-reread').review, 'pending');
+  await refresh(barbara);
+  assert.equal(await barbara.getByRole('button', { name: /proposal readiness reread/ }).count(), 0);
+
+  for (const [id, patch] of [['ready-email', {}], ['ready-manual', { kind: 'manual', draft: null }]]) {
+    lot(id, 930, id, patch);
+    await carla.reload();
+    await carla.getByRole('checkbox', { name: `approve ${id} for barbara`, exact: true }).waitFor();
+    assert.equal(await carla.getByRole('checkbox', { name: `approve ${id} for barbara`, exact: true }).isDisabled(), false);
+    await carla.getByRole('button', { name: new RegExp(id) }).click();
+    await carla.getByRole('button', { name: 'approve for barbara', exact: true }).click();
+    await stored(id, (doc) => doc.review === 'approved');
+    assert.equal(docs.get(`lots/${id}`).completed, false);
+    await refresh(barbara);
+    await barbara.getByRole('button', { name: new RegExp(id) }).click();
+    await barbara.getByRole('button', { name: 'mark as handled', exact: true }).click();
+    await stored(id, (doc) => doc.completed);
+    await barbara.reload();
+    await present(barbara.getByRole('heading', { name: 'from carla' }));
+    assert.equal(await barbara.getByRole('button', { name: new RegExp(id) }).count(), 0);
+  }
+  lot('reopen-unready', 940, 'reopen unready archived email', { review: 'approved', completed: true, draft: null, closedAt: new Date().toISOString() });
+  await carla.reload();
+  await carla.getByRole('button', { name: 'archive', exact: true }).click();
+  await carla.getByRole('checkbox', { name: 'reopen reopen unready archived email', exact: true }).click();
+  await stored('reopen-unready', (doc) => doc.open && !doc.completed && doc.review === 'pending');
+  await carla.getByRole('button', { name: 'today', exact: true }).click();
+  assert.equal(await carla.getByRole('checkbox', { name: 'reopen unready archived email proposal not ready', exact: true }).isDisabled(), true);
+  assert.deepEqual(unexpected, [], 'all API usage must remain in the offline fixture contract');
+  assert.deepEqual(pageErrors, [], 'no unhandled browser errors');
+  assert.equal(commits.length, beforeUnready + 5, 'only valid approvals, completions, and reopening should write');
+  console.log('PASS: validator rechecks readiness; valid email and draftless manual approval/completion still work');
   console.log(`PASS: ${commits.length} expected writes, no real backend/Gmail traffic, no browser errors`);
 } finally {
   await browser?.close();

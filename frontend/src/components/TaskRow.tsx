@@ -1,6 +1,7 @@
 import s from './Index.module.css';
 import type { Task } from '../types';
 import { leadInk, lot, rowMeta } from '../lib/format';
+import { canApprove } from '../lib/review';
 
 export function TaskRow({
   task,
@@ -18,6 +19,7 @@ export function TaskRow({
   const [lead, tail] = rowMeta(task, now);
   const awaitingBarbara = !!task.prepared && !task.prepared.completed && ['barbara', 'changes'].includes(task.prepared.review);
   const queued = task.prepared?.robot?.state === 'queued';
+  const unready = !task.done && !canApprove(task);
   return (
     <li className={[s.row, saving ? s.rowSaving : ''].join(' ')}>
       <button type="button" className={s.open} onClick={onOpen}>
@@ -36,9 +38,9 @@ export function TaskRow({
         type="button"
         role="checkbox"
         aria-checked={task.done}
-        aria-label={queued ? `${task.title} reply queued` : task.done ? `reopen ${task.title}` : awaitingBarbara ? `${task.title} is with barbara` : task.prepared ? `approve ${task.title} for barbara` : `mark ${task.title} as done`}
+        aria-label={queued ? `${task.title} reply queued` : task.done ? `reopen ${task.title}` : awaitingBarbara ? `${task.title} is with barbara` : unready ? `${task.title} proposal not ready` : task.prepared ? `approve ${task.title} for barbara` : `mark ${task.title} as done`}
         className={s.check}
-        disabled={saving || awaitingBarbara || queued}
+        disabled={saving || awaitingBarbara || queued || unready}
         onClick={onToggle}
       >
         <span className={[s.checkBox, task.done ? s.checkBoxOn : ''].join(' ')} />

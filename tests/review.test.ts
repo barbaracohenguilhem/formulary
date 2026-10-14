@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { flagsOf, readLot, toTask, type LotDoc } from '../frontend/src/lib/inbox';
-import { isBarbaraPending, reviewPatch } from '../frontend/src/lib/review';
+import { canApprove, isBarbaraPending, reviewPatch } from '../frontend/src/lib/review';
 
 const BEFORE = '2026-10-07T10:00:00.000Z';
 const NOW = '2026-10-07T12:00:00.000Z';
@@ -43,6 +43,43 @@ test('scheduled robot requests survive loading and cannot be approved while queu
   assert.equal(task(queued).prepared?.robot?.state, 'queued');
   rejectsCode(() => reviewPatch(queued, 'carla', { kind: 'approve' }, NOW), 'review_conflict');
   assert.equal(queued.review, 'pending');
+});
+
+const unreadyEmailStates: [string, Partial<LotDoc>][] = [
+  ['missing draft', { draft: null }],
+  ['missing proposal', { draft: { at: BEFORE, basis: 'thread' } }],
+  ['empty proposal', { draft: { proposal: '', at: BEFORE, basis: 'thread' } }],
+  ['whitespace proposal', { draft: { proposal: ' \n ', at: BEFORE, basis: 'thread' } }],
+  ['failed draft with old proposal', { draftFail: { code: 'unavailable', at: BEFORE } }],
+  ['failed triage with old proposal', { triageFail: { code: 'unavailable', at: BEFORE } }],
+  ...(['queued', 'preparing', 'revising', 'failed'] as const).map((state): [string, Partial<LotDoc>] =>
+    [`robot ${state}`, { robot: { state, at: BEFORE } }]),
+];
+
+for (const [name, patch] of unreadyEmailStates) {
+  test(`unready email approval is rejected: ${name}`, () => {
+    const doc = lot(patch);
+    const before = structuredClone(doc);
+    assert.equal(canApprove(task(doc)), false);
+    rejectsCode(() => reviewPatch(doc, 'carla', { kind: 'approve' }, NOW), 'review_conflict');
+    assert.deepEqual(doc, before);
+    assert.equal(doc.open, true);
+    assert.equal(isBarbaraPending(task(doc)), false);
+  });
+}
+
+test('valid email and draftless manual approval still lead to Barbara completion', () => {
+  for (const original of [lot(), lot({ kind: 'manual', draft: null })]) {
+    assert.equal(canApprove(task(original)), true);
+    const approved = apply(original, 'carla', { kind: 'approve' });
+    assert.equal(canApprove(task(approved)), false);
+    assert.equal(isBarbaraPending(task(approved)), true);
+    assert.equal(approved.completed, false);
+    assert.equal(isBarbaraPending(task(apply(approved, 'barbara', { kind: 'complete' }))), false);
+  }
+  assert.equal(canApprove(task(lot({ completed: true }))), false);
+  assert.equal(canApprove(task(lot({ review: 'barbara' }))), false);
+  assert.equal(canApprove({ ...task(lot()), prepared: undefined }), true);
 });
 
 test('Carla approval is work for Barbara, not proof the action has been completed', () => {
@@ -143,6 +180,13 @@ test('reopening restores Carla review and removes stale completed state', () => 
   assert.equal(next.open, true);
   assert.equal(next.completedAt, undefined);
   assert.equal(isBarbaraPending(task(next)), false);
+});
+
+test('approval readiness does not prevent reopening an archived email without a proposal', () => {
+  const next = apply(lot({ completed: true, draft: null }), 'carla', { kind: 'reopen' });
+  assert.equal(next.open, true);
+  assert.equal(next.completed, false);
+  assert.equal(canApprove(task(next)), false);
 });
 
 test('role boundaries are enforced before any transition patch can be persisted', () => {
