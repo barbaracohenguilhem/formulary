@@ -17,7 +17,8 @@ export function TaskRow({
   onToggle: () => void;
 }) {
   const [lead, tail] = rowMeta(task, now);
-  const awaitingBarbara = !!task.prepared && !task.prepared.completed && ['barbara', 'changes'].includes(task.prepared.review);
+  const awaitingBarbara = !!task.prepared && !task.prepared.completed && task.prepared.review === 'barbara';
+  const awaitingRobot = !!task.prepared && !task.prepared.completed && task.prepared.review === 'changes';
   const queued = task.prepared?.robot?.state === 'queued';
   const unready = !task.done && !canApprove(task);
   return (
@@ -38,9 +39,9 @@ export function TaskRow({
         type="button"
         role="checkbox"
         aria-checked={task.done}
-        aria-label={queued ? `${task.title} reply queued` : task.done ? `reopen ${task.title}` : awaitingBarbara ? `${task.title} is with barbara` : unready ? `${task.title} proposal not ready` : task.prepared ? `approve ${task.title} for barbara` : `mark ${task.title} as done`}
+        aria-label={task.done ? `reopen ${task.title}` : awaitingRobot ? `${task.title} is with the robot` : queued ? `${task.title} reply queued` : awaitingBarbara ? `${task.title} is with barbara` : unready ? `${task.title} proposal not ready` : task.prepared ? `approve ${task.title} for barbara` : `mark ${task.title} as done`}
         className={s.check}
-        disabled={saving || awaitingBarbara || queued || unready}
+        disabled={saving || awaitingBarbara || awaitingRobot || queued || unready}
         onClick={onToggle}
       >
         <span className={[s.checkBox, task.done ? s.checkBoxOn : ''].join(' ')} />

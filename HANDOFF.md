@@ -1,5 +1,33 @@
 # Formulary — registro para retomar
 
+## Prioridades atualizadas pela usuária — 13/10/2026
+
+Estas decisões substituem as prioridades históricas abaixo sobre classificação e
+destino do feedback. Criação manual de tarefas, login e design ficam para depois.
+
+- O briefing deve mostrar ações da Carla. Uma cobrança acompanhada por Fernanda
+  não vira tarefa da Carla por estar na caixa dela ou na categoria Finance.
+- Open in Gmail deve levar à conversa correspondente, na conta correta. A usuária
+  também quer a resposta preparada dentro do Gmail, sem procurar o email nem
+  copiar o texto manualmente.
+- Instruções livres, por escrita ou ditado, vão primeiro ao robô para revisão e
+  voltam para aprovação. Barbara recebe instruções por delegação explícita.
+- A usuária quer anexar arquivos às instruções; não basta oferecer opções fixas
+  de tom ou outros tipos de mudança.
+
+A proposta atual corrige o filtro por responsabilidade, o destino das instruções
+e os links por conversa no código-fonte. **Não está publicada.** `actionFor` é
+opcional para compatibilidade; registros antigos com ação pendente e sem essa
+classificação precisam ser reavaliados pelo robô, sem adivinhar pelo nome do dono.
+
+Pendências: confirmar o endereço exato aberto no celular (os botões relatados não
+correspondem ao pacote estático conferido); atualizar o processamento externo;
+integrar respostas reais no Gmail e armazenamento/leitura dos anexos; validar
+no navegador e no iPhone. A integração Supabase recusou leitura das funções do
+projeto nesta sessão. Chromium não estava disponível e o download retornou ZIP
+inválido; testes de lógica não substituem essa validação. Não houve escrita em
+dados de produção, criação de rascunhos Gmail ou envio de mensagens.
+
 ## Publicação concluída — Cloudflare Pages, 08/10/2026
 
 **A nova versão está publicada em [formulary-bfk.pages.dev](https://formulary-bfk.pages.dev/).**

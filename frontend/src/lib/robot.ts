@@ -18,7 +18,7 @@
 import type { Db, DocRef, Mcp, Sample } from './runtime';
 import { describe, type Failure } from './failure';
 import { listThreads, localStamp, threadText, type MessageMeta, type ThreadMeta } from './gmail';
-import { CATEGORIES, CURATED, PRIORITIES, flagsOf, parseDate, readLot, type DraftDoc, type LotDoc, type Triage } from './inbox';
+import { CATEGORIES, CURATED, PRIORITIES, flagsOf, needsCarlaAction, parseDate, readActionFor, readLot, type DraftDoc, type LotDoc, type Triage } from './inbox';
 
 /* ——— the studio's notes: seeded into the store by Claude, never hardcoded ——— */
 
@@ -232,8 +232,8 @@ function localDay() {
 function preamble(c: RobotConfig, notes: 'digest' | 'full') {
   const body = notes === 'full' ? c.notes : c.notes.slice(0, 1500);
   return [
-    'You are the robot behind Formulary, the review inbox of a design studio. You read the principal’s email and turn',
-    'each thread into a task she can act on. You PREPARE; you never send and never act. She reviews what you prepare —',
+    'You are the robot behind Formulary, the review inbox of Carla, the principal of a design studio. Read her email and',
+    'identify only the next actions or decisions that need Carla. Not every thread is her task. You PREPARE; you never send or act. She reviews what you prepare —',
     'approves it, asks for changes, or hands it to her assistant, who carries out the approved action by hand.',
     '',
     `Today: ${localDay()}. Mailbox: ${c.mailbox || 'the studio mailbox'}.`,
@@ -250,12 +250,13 @@ function preamble(c: RobotConfig, notes: 'digest' | 'full') {
 const TRIAGE_SHAPE = `{
   "id": "<the thread id exactly as given>",
   "category": one of ${JSON.stringify(CATEGORIES)},
-  "actionRequired": true only when the principal or the studio must do or decide something,
+  "actionRequired": true only when Carla herself has a next action or decision; false for work assigned to someone else, waiting on them, or information only,
+  "actionFor": "carla" when Carla must act or approve next; "other" when another person must act next; "none" when no action remains; "unclear" when the available evidence cannot identify the next responsible person,
   "priority": one of ${JSON.stringify(PRIORITIES)},
   "nextAction": "the task as one imperative line, at most 90 characters, naming the concrete action and counterpart (e.g. Approve ordering the Joseph Giles door hardware sample pack for 2311 B&B), or \\"No action required.\\"",
   "summary": "one or two factual sentences: who wants what, the stakes, any deadline",
   "project": "a known project's literal name, a new project's name when one clearly appears, or null",
-  "owner": "who must act, by name, or null",
+  "owner": "the person responsible for the NEXT unresolved action, by name, or null if unknown; not merely the sender or eventual executor",
   "fromName": "the sender as they sign (name — organisation), or null",
   "dueAt": "a stated or clearly implied deadline, local time, \\"YYYY-MM-DD\\" or \\"YYYY-MM-DDTHH:MM\\", else null",
   "risk": "null, or a short warning when the thread asks for money to new bank details, a payment, credentials, or a login — anything a spoofed sender would ask"
@@ -270,6 +271,7 @@ const inert = (t: string) => t.replace(/</g, '‹').replace(/>/g, '›');
 function threadBlock({ id, doc }: Stub) {
   const lines = [
     `subject: ${doc.subject}`,
+    doc.to?.length ? `to: ${doc.to.join(', ')}` : '',
     doc.cc?.length ? `cc: ${doc.cc.join(', ')}` : '',
     ...(doc.recent ?? []).map((m) => `— ${m.ours ? `${m.from} (the studio)` : m.from} · ${localStamp(m.at)}\n${m.snippet}`),
   ].filter(Boolean);
@@ -283,6 +285,11 @@ function triagePrompt(c: RobotConfig, batch: Stub[]) {
     'Triage each thread below from its sender, subject and the snippets of its latest messages. Automated account or',
     'service notifications are never action items (System / Notification, No priority, "No action required.") unless',
     'they are critical security or payment failures. Derive every field from the content — never generic defaults.',
+    'Identify the next unresolved step, not the overall project owner. A finance/project category, a known sender,',
+    'a name mentioned in the body, or Carla appearing in To/CC does not by itself assign her work.',
+    'If Fernanda follows up while a captain collects payment, actionFor is other and actionRequired is false.',
+    'If Fernanda cannot proceed until Carla approves, the next action is Carla’s approval: actionFor is carla.',
+    'When assignment is unclear, use actionFor unclear; do not invent an obligation from the category or recipients.',
     '',
     `Reply with ONLY a JSON array: exactly one object per thread, each exactly this shape:\n${TRIAGE_SHAPE}`,
     '',
@@ -336,9 +343,10 @@ const PAYMENT = /\b(iban|swift|bic|routing number|account number|bank details|wi
 
 function triageOf(o: Record<string, unknown>): Triage {
   const dueAt = dateOrNone(o.dueAt);
-  return {
+  const triage: Triage = {
     category: oneOf(o.category, CATEGORIES, 'Action required'),
     actionRequired: o.actionRequired === true,
+    actionFor: readActionFor(o.actionFor),
     priority: oneOf(o.priority, PRIORITIES, 'No priority'),
     nextAction: s(o.nextAction, 200) || 'Read this letter and decide',
     summary: s(o.summary, 900),
@@ -347,6 +355,7 @@ function triageOf(o: Record<string, unknown>): Triage {
     fromName: s(o.fromName, 120) || undefined,
     ...(dueAt ? { dueAt, dueHasTime: dueAt.includes('T') } : {}),
   };
+  return { ...triage, actionRequired: needsCarlaAction(triage) };
 }
 
 function draftOf(o: Record<string, unknown>, basis: DraftDoc['basis'], answering?: string): DraftDoc {
@@ -402,13 +411,14 @@ function machineTriage(doc: LotDoc): Triage | null {
   return {
     category: 'System / Notification',
     actionRequired: false,
+    actionFor: 'none',
     priority: 'No priority',
     nextAction: 'No action required.',
     summary: doc.subject,
   };
 }
 
-/** Anyone the studio knows is never mail: whatever the model says, their thread stays work. */
+/** Keep known correspondence for context/retention; its category never assigns Carla an action. */
 function keepKnown(triage: Triage, sender: string, c: RobotConfig): Triage {
   const known = knownSender(sender, c);
   if (!known || CURATED.has(triage.category) || triage.actionRequired) return triage;
@@ -532,6 +542,7 @@ async function writeStub(db: Db, t: ThreadMeta, self: boolean[], inbound: Messag
     gmail: t.viewUrl || undefined,
     subject: inbound.subject || last.subject || t.messages[0].subject,
     senderEmail: inbound.sender,
+    to: last.to.slice(0, 8),
     cc: last.cc.slice(0, 8),
     receivedAt: new Date(inbound.at).toISOString(),
     lastInboundId: inbound.id,
@@ -654,6 +665,7 @@ export async function read(ctx: ReadCtx, unread: Stub[]): Promise<Outcome> {
       const fallback: Triage = {
         category: 'Action required',
         actionRequired: true,
+        actionFor: 'unclear',
         priority: 'Medium',
         nextAction: 'Read this letter and decide',
         summary: 'the robot couldn’t read this one — open it in gmail',
@@ -728,7 +740,7 @@ async function writeTriage(db: Db, x: Stub, triage: Triage, risk: string | undef
     };
     let review = now.review;
     let completed = now.completed;
-    if (now.completed && triage.actionRequired) {
+    if (now.completed && needsCarlaAction(triage)) {
       // it needs her again — reopen, keeping the slips on record
       review = 'pending';
       completed = false;
@@ -880,7 +892,7 @@ export function urgentUndrafted(lots: { id: string; doc: LotDoc }[], now: Date, 
         doc.open &&
         doc.work &&
         doc.review === 'pending' &&
-        doc.triage?.actionRequired &&
+        needsCarlaAction(doc.triage) &&
         !doc.draft &&
         !doc.draftFail &&
         !doc.triageFail &&

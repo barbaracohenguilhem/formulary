@@ -320,7 +320,7 @@ export function useFormulary() {
       if (viewer.current === 'barbara') {
         // Query each actionable status independently. Approved lots are closed to
         // Carla, but must never depend on the 200-item archive window here.
-        const reviews = ['approved', 'barbara', 'changes'] as const;
+        const reviews = ['approved', 'barbara'] as const;
         const queries = reviews.map((review) => store.collection('lots')
           .where('completed', '==', false).where('review', '==', review)
           .orderBy('receivedAt', 'desc').limit(OPEN_LIMIT));
@@ -809,7 +809,7 @@ export function useFormulary() {
             return;
           }
         }
-        toast(revision ? 'sent · the robot answers your note within the hour' : 'queued · the robot prepares it within the hour', 4200);
+        toast(revision ? 'instructions saved · waiting for the robot' : 'queued · waiting for the robot to prepare it', 4200);
         return;
       }
       if (cloud.current) {
@@ -908,7 +908,7 @@ export function useFormulary() {
           if (viewer.current === 'barbara') {
             if (detailLot.current?.id === task.id) detailLot.current = updated;
             for (const key of Object.keys(reviewLots.current)) reviewLots.current[key] = reviewLots.current[key].filter((l) => l.id !== task.id);
-            if (!saved.completed && ['approved', 'barbara', 'changes'].includes(saved.review)) {
+            if (!saved.completed && ['approved', 'barbara'].includes(saved.review)) {
               reviewLots.current[saved.review] = [...(reviewLots.current[saved.review] ?? []), updated];
             }
           } else {
@@ -1209,12 +1209,15 @@ export function useFormulary() {
         if (!task || state.pending[task.id] || actor !== 'carla') return;
         const note = state.slip.note.trim();
         if (!note || state.recording) return;
+        const recipient = state.slip.recipient === 'barbara' ? 'barbara' : 'robot';
         stopDictation();
         // Keep the editor and its transcript until the shared record confirms it.
         void write(task, (doc) => reviewPatch(doc, actor, {
-          kind: 'feedback', note, mode: state.slip.mode, secs: state.slip.secs,
-        }, nowIso()), 'feedback sent to barbara').then((ok) => {
-          if (ok) dispatch({ type: 'open', id: task.id });
+          kind: 'feedback', note, mode: state.slip.mode, secs: state.slip.secs, recipient,
+        }, nowIso()), recipient === 'barbara' ? 'instructions sent to barbara' : 'instructions saved for the robot').then((ok) => {
+          if (!ok) return;
+          dispatch({ type: 'open', id: task.id });
+          if (recipient === 'robot') void draftOne(task.id, { notes: [note] });
         });
       },
 

@@ -1,16 +1,16 @@
-import type { Task, SlipMode } from '../types';
+import type { Task, SlipMode, FeedbackRecipient } from '../types';
 import type { LotDoc, SlipEntry } from './inbox';
 
 export type ReviewActor = 'carla' | 'barbara' | null;
 export type ReviewAction =
   | { kind: 'approve' | 'complete' | 'file' | 'reopen' }
-  | { kind: 'feedback'; note: string; mode: SlipMode; secs?: number }
+  | { kind: 'feedback'; note: string; mode: SlipMode; secs?: number; recipient?: FeedbackRecipient }
   | { kind: 'return'; proposal: string };
 
 /** Approval is a handoff, not evidence of an email being sent or work being done. */
 export function isBarbaraPending(task: Task): boolean {
   const p = task.prepared;
-  return !!p && !p.completed && ['approved', 'barbara', 'changes'].includes(p.review);
+  return !!p && !p.completed && ['approved', 'barbara'].includes(p.review);
 }
 
 function approvalReady(manual: boolean, proposal: string | undefined, robot: LotDoc['robot'], failed: boolean): boolean {
@@ -51,10 +51,11 @@ export function reviewPatch(doc: LotDoc, actor: ReviewActor, action: ReviewActio
     case 'feedback': {
       const note = action.note.trim();
       if (!note || note.length > 4000) reject('review_invalid', 'keep your instructions between 1 and 4000 characters');
-      const slip: SlipEntry = { at: now, to: 'barbara', note, mode: action.mode };
+      const delegated = action.recipient === 'barbara';
+      const slip: SlipEntry = { at: now, to: delegated ? 'barbara' : 'the robot', note, mode: action.mode };
       if (action.mode === 'voice' && Number.isFinite(action.secs)) slip.secs = Math.max(0, action.secs!);
       return {
-        review: 'barbara', reviewedAt: now, feedback: note,
+        review: delegated ? 'barbara' : 'changes', reviewedAt: now, feedback: note,
         slips: [...(doc.slips ?? []), slip].slice(-12),
         robot: null, completed: false, completedAt: null,
       };
@@ -65,7 +66,7 @@ export function reviewPatch(doc: LotDoc, actor: ReviewActor, action: ReviewActio
       }
       return { completed: true, completedAt: now };
     case 'return': {
-      if (!['approved', 'barbara', 'changes'].includes(doc.review)) reject('review_conflict', 'this lot is already back with carla');
+      if (!['approved', 'barbara'].includes(doc.review)) reject('review_conflict', 'this lot is no longer with barbara');
       const proposal = action.proposal.trim();
       if (!proposal || proposal.length > 6000) reject('review_invalid', 'keep the proposal between 1 and 6000 characters');
       return {

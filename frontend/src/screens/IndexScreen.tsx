@@ -233,7 +233,7 @@ export function IndexScreen({
 
             {inbox && tab !== 'archive' && (
               <button type="button" className={s.foot} onClick={onToggleShowAll}>
-                {showAll ? 'back to work only · hide newsletters & notifications' : 'show all primary mail · the last three days'}
+                {showAll ? 'back to carla’s actions' : 'show other mail'}
               </button>
             )}
           </>

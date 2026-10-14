@@ -10,6 +10,7 @@
  *          subject, snippet, toRecipients[], ccRecipients[], viewUrl }
  */
 import type { Mcp, McpResult } from './runtime';
+import { gmailLink, gmailMailbox } from './gmailLink';
 
 export const GMAIL = 'Gmail';
 export const TOOLS = { search: 'search_threads', get: 'get_thread' } as const;
@@ -46,13 +47,8 @@ export const unescapeHtml = (s: string) =>
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&');
 
-const safeUrl = (u: string) => (/^https:\/\/mail\.google\.com\//i.test(u) ? u : '');
-
 /** Which mailbox a thread was read from: the connector's own `authuser`. */
-export const mailboxOf = (viewUrl: string) => {
-  const m = viewUrl.match(/[?&]authuser=([^&#]+)/);
-  return m ? decodeURIComponent(m[1]).toLowerCase() : '';
-};
+export const mailboxOf = gmailMailbox;
 
 export function payloadOf(res: McpResult): Record<string, unknown> {
   let p: unknown = res?.payload;
@@ -96,8 +92,9 @@ export function threadOf(t: Record<string, unknown>): ThreadMeta | null {
     .filter((m) => !m.labels.includes('DRAFT'))
     .sort((a, b) => a.at - b.at);
   if (!threadId || messages.length === 0) return null;
-  const viewUrl = safeUrl(str(t.viewUrl));
-  return { threadId, messages, viewUrl, mailbox: mailboxOf(viewUrl) };
+  const mailbox = mailboxOf(str(t.viewUrl));
+  const viewUrl = gmailLink({ gmail: str(t.viewUrl), threadId, mailbox }) ?? '';
+  return { threadId, messages, viewUrl, mailbox };
 }
 
 /**
